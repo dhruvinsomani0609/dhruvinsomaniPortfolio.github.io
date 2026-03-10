@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenisth Voice Agent — Case Study</title>
+    <meta name="description"
+        content="Case study for Zenisth Voice Agent: an intelligent voice-first RAG system using tree-structured vectorless retrieval, Deepgram STT, and LLM-guided hierarchical document traversal.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="zenisth-voice-case-study.css">
+</head>
+
+<body>
+
+    <div id="vx-progress-bar"></div>
+    <div class="vx-cursor-glow" id="vx-cursor-glow"></div>
+
+    <!-- NAV -->
+    <nav>
+        <div class="vx-nav-title">Zenisth Voice Agent</div>
+        <div class="vx-nav-links">
+            <a href="#overview">Overview</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#decisions">Decisions</a>
+            <a href="#code">Code</a>
+            <a href="#challenges">Challenges</a>
+            <a href="#learnings">Learnings</a>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="vx-hero">
+        <!-- Sound wave bars decoration -->
+        <div class="vx-hero-wave" aria-hidden="true">
+            <div class="vx-wave-bar"></div>
+            <div class="vx-wave-bar"></div>
+            <div class="vx-wave-bar"></div>
+            <div class="vx-wave-bar"></div>
+            <div class="vx-wave-bar"></div>
+            <div class="vx-wave-bar"></div>
+            <div class="vx-wave-bar"></div>
+            <div class="vx-wave-bar"></div>
+            <div class="vx-wave-bar"></div>
+            <div class="vx-wave-bar"></div>
+        </div>
+        <div class="vx-ripple-ring" aria-hidden="true"></div>
+        <div class="vx-ripple-ring" aria-hidden="true"></div>
+        <div class="vx-ripple-ring" aria-hidden="true"></div>
+
+        <div class="vx-hero-eyebrow"><span>Internship Project · AI Systems</span></div>
+        <h1 class="vx-hero-title">
+            <span class="line1">Zenisth</span>
+            <span class="line2">Voice Agent</span>
+        </h1>
+        <p class="vx-hero-sub">An intelligent, voice-first RAG system that traverses hierarchical document trees
+            using LLM reasoning — no embeddings, no vector databases, no hallucination-prone similarity math.</p>
+        <div class="vx-hero-meta">
+            <div>
+                <div class="vx-hero-meta-label">Role</div>
+                <div class="vx-hero-meta-value">AI Backend Developer</div>
+            </div>
+            <div>
+                <div class="vx-hero-meta-label">Company</div>
+                <div class="vx-hero-meta-value">Zenisth AI</div>
+            </div>
+            <div>
+                <div class="vx-hero-meta-label">RAG Method</div>
+                <div class="vx-hero-meta-value">Vectorless Tree Search</div>
+            </div>
+            <div>
+                <div class="vx-hero-meta-label">Interface</div>
+                <div class="vx-hero-meta-value">Voice-First · Deepgram</div>
+            </div>
+        </div>
+        <div class="vx-hero-tags">
+            <span class="vx-htag">Python</span>
+            <span class="vx-htag">Deepgram</span>
+            <span class="vx-htag">OpenAI</span>
+            <span class="vx-htag">Docling</span>
+            <span class="vx-htag">Vectorless RAG</span>
+            <span class="vx-htag">Flask</span>
+            <span class="vx-htag">YAML Config</span>
+            <span class="vx-htag">Mammoth</span>
+        </div>
+    </header>
+
+    <!-- OVERVIEW -->
+    <section class="vx-section" id="overview">
+        <div class="vx-sec-label">
+            <span class="vx-sec-label-text">Overview</span>
+            <span class="vx-sec-label-num">/ 01</span>
+        </div>
+
+        <div class="vx-stats-row vx-reveal">
+            <div class="vx-stat-cell">
+                <div class="vx-stat-num">0</div>
+                <div class="vx-stat-label">Vector databases used — pure tree traversal retrieval</div>
+            </div>
+            <div class="vx-stat-cell">
+                <div class="vx-stat-num">STT</div>
+                <div class="vx-stat-label">Real-time Deepgram speech-to-text with live browser preview</div>
+            </div>
+            <div class="vx-stat-cell">
+                <div class="vx-stat-num">∞</div>
+                <div class="vx-stat-label">Document depth — full hierarchical heading structure preserved</div>
+            </div>
+            <div class="vx-stat-cell">
+                <div class="vx-stat-num">DRY</div>
+                <div class="vx-stat-label">Refactored monolith into a production-grade Python package</div>
+            </div>
+        </div>
+
+        <h2 class="vx-sec-title vx-reveal">The Problem Space</h2>
+        <p class="vx-sec-desc vx-reveal">Traditional vector database RAG approaches rely on random text chunking and
+            cosine
+            similarity — destroying document structure and leading to inaccurate retrieval for long, complex documents
+            like
+            financial reports, SOPs, and manuals. Zenisth Voice Agent solves this by preserving the entire document
+            hierarchy
+            as a tree, then guiding an LLM to traverse it like a human expert would — section by section, reasoning at
+            each
+            node — to find the exact context needed before generating an answer. On top of that, users never have to
+            type:
+            the entire experience is voice-first via Deepgram.</p>
+
+        <div class="vx-divider-line"></div>
+
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:24px;" class="vx-reveal">
+            Tech Stack</h3>
+        <div class="vx-stack-grid">
+            <div class="vx-stack-card vx-reveal">
+                <span class="vx-stack-icon">🎙️</span>
+                <div class="vx-stack-name">Deepgram</div>
+                <div class="vx-stack-role">Real-time STT · Live browser preview</div>
+            </div>
+            <div class="vx-stack-card vx-reveal">
+                <span class="vx-stack-icon">🧠</span>
+                <div class="vx-stack-name">OpenAI LLM</div>
+                <div class="vx-stack-role">Tree traversal reasoning · Response generation</div>
+            </div>
+            <div class="vx-stack-card vx-reveal">
+                <span class="vx-stack-icon">📄</span>
+                <div class="vx-stack-name">Docling</div>
+                <div class="vx-stack-role">Hierarchical PDF/DOCX parsing · Heading levels</div>
+            </div>
+            <div class="vx-stack-card vx-reveal">
+                <span class="vx-stack-icon">🌐</span>
+                <div class="vx-stack-name">Flask</div>
+                <div class="vx-stack-role">REST API · /api/models · /api/config</div>
+            </div>
+            <div class="vx-stack-card vx-reveal">
+                <span class="vx-stack-icon">📑</span>
+                <div class="vx-stack-name">Mammoth + docx2txt</div>
+                <div class="vx-stack-role">DOCX fallback parsers</div>
+            </div>
+            <div class="vx-stack-card vx-reveal">
+                <span class="vx-stack-icon">🗄️</span>
+                <div class="vx-stack-name">Relational DB</div>
+                <div class="vx-stack-role">Flattened tree nodes · start_index / end_index</div>
+            </div>
+            <div class="vx-stack-card vx-reveal">
+                <span class="vx-stack-icon">⚙️</span>
+                <div class="vx-stack-name">config.yaml</div>
+                <div class="vx-stack-role">Centralized model &amp; env configuration</div>
+            </div>
+            <div class="vx-stack-card vx-reveal">
+                <span class="vx-stack-icon">🖥️</span>
+                <div class="vx-stack-name">Vanilla HTML/JS</div>
+                <div class="vx-stack-role">Dynamic frontend · API-driven model dropdowns</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ARCHITECTURE -->
+    <section class="vx-section" id="architecture">
+        <div class="vx-sec-label">
+            <span class="vx-sec-label-text">Architecture</span>
+            <span class="vx-sec-label-num">/ 02</span>
+        </div>
+        <h2 class="vx-sec-title vx-reveal">Two Pipelines — Ingestion &amp; Retrieval</h2>
+        <p class="vx-sec-desc vx-reveal">The system operates on two separate data flows. The ingestion pipeline
+            builds a hierarchical tree once. The retrieval pipeline traverses that tree on every query — guided at
+            each level by an LLM — until it reaches the exact document section needed.</p>
+
+        <div class="vx-flow-grid vx-reveal">
+            <div class="vx-flow-step">
+                <div class="vx-flow-step-num">01</div>
+                <span class="vx-flow-step-icon">🎙️</span>
+                <div class="vx-flow-step-title">Voice Input</div>
+                <div class="vx-flow-step-desc">User speaks a query into the browser. Deepgram processes the live audio
+                    stream in real-time, returning a high-accuracy text transcript with minimal latency.</div>
+                <div class="vx-flow-connector"></div>
+            </div>
+            <div class="vx-flow-step">
+                <div class="vx-flow-step-num">02</div>
+                <span class="vx-flow-step-icon">🌳</span>
+                <div class="vx-flow-step-title">Tree Root Scan</div>
+                <div class="vx-flow-step-desc">The query is sent to the backend. The LLM is shown the top-level document
+                    tree (Level 1 headings + their summaries) and asked: "Which branch is relevant to this query?"</div>
+                <div class="vx-flow-connector"></div>
+            </div>
+            <div class="vx-flow-step">
+                <div class="vx-flow-step-num">03</div>
+                <span class="vx-flow-step-icon">🔍</span>
+                <div class="vx-flow-step-title">Drill-Down Traversal</div>
+                <div class="vx-flow-step-desc">The system recursively drills into the selected branch — Level 2 → Level
+                    3
+                    → leaf nodes — until the LLM identifies a node whose
+                    <code style="color:var(--rose-bright);">start_index/end_index</code> bounds contain the answer.
+                </div>
+            </div>
+            <div class="vx-flow-step">
+                <div class="vx-flow-step-num">04</div>
+                <span class="vx-flow-step-icon">📄</span>
+                <div class="vx-flow-step-title">Context Extraction</div>
+                <div class="vx-flow-step-desc">The exact text slice identified by the
+                    <code style="color:var(--rose-bright);">start_index</code> and
+                    <code style="color:var(--rose-bright);">end_index</code> of the selected node is pulled from the
+                    relational DB — no hallucination-prone similarity ranking.
+                </div>
+                <div class="vx-flow-connector"></div>
+            </div>
+            <div class="vx-flow-step">
+                <div class="vx-flow-step-num">05</div>
+                <span class="vx-flow-step-icon">💬</span>
+                <div class="vx-flow-step-title">Answer Generation</div>
+                <div class="vx-flow-step-desc">The LLM receives the exact context slice plus the original query and
+                    generates
+                    a precise, grounded answer — no hallucination from irrelevant vector chunks.</div>
+            </div>
+        </div>
+
+        <div class="vx-divider-line"></div>
+
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:16px;" class="vx-reveal">
+            Vectorless vs. Vector RAG — Side by Side</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="vx-reveal">
+            <div style="padding:24px;border:1px solid var(--line);border-radius:4px;background:var(--bg3);">
+                <div
+                    style="font-size:11px;color:var(--rose-bright);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:14px;">
+                    Vectorless (This System)</div>
+                <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">
+                    <li style="font-size:12px;color:var(--text-muted);">✅ Document structure fully preserved</li>
+                    <li style="font-size:12px;color:var(--text-muted);">✅ LLM reasons about relevance, not math</li>
+                    <li style="font-size:12px;color:var(--text-muted);">✅ Exact text bounds via start/end index</li>
+                    <li style="font-size:12px;color:var(--text-muted);">✅ No vector database dependency</li>
+                    <li style="font-size:12px;color:var(--text-muted);">✅ Works on long, complex documents</li>
+                </ul>
+            </div>
+            <div style="padding:24px;border:1px solid var(--line);border-radius:4px;background:var(--bg3);">
+                <div
+                    style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:14px;">
+                    Traditional Vector RAG</div>
+                <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">
+                    <li style="font-size:12px;color:var(--text-dim);">❌ Random chunking destroys hierarchy</li>
+                    <li style="font-size:12px;color:var(--text-dim);">❌ Similarity math ≠ semantic relevance</li>
+                    <li style="font-size:12px;color:var(--text-dim);">❌ Chunks lose surrounding context</li>
+                    <li style="font-size:12px;color:var(--text-dim);">❌ Requires expensive vector DB</li>
+                    <li style="font-size:12px;color:var(--text-dim);">❌ Breaks on structured documents (SOPs, manuals)
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- KEY DECISIONS -->
+    <section class="vx-section" id="decisions">
+        <div class="vx-sec-label">
+            <span class="vx-sec-label-text">Key Decisions</span>
+            <span class="vx-sec-label-num">/ 03</span>
+        </div>
+        <h2 class="vx-sec-title vx-reveal">4 Pivotal Engineering Choices</h2>
+        <p class="vx-sec-desc vx-reveal">Each decision was driven by the core constraint: accurate retrieval from
+            complex, long documents without hallucination — while keeping the interface effortless for professionals.
+        </p>
+
+        <div class="vx-decisions-grid">
+            <div class="vx-decision-card vx-reveal">
+                <div class="vx-decision-card-header">
+                    <div class="vx-decision-card-num">01</div>
+                    <div class="vx-decision-card-title">Tree-Structured Vectorless RAG</div>
+                </div>
+                <div class="vx-decision-card-body">
+                    <div class="vx-decision-problem">⚠ Problem
+                        <span>Standard vector RAG chunks documents without regard for structure. A 200-token chunk from
+                            a financial report may contain a paragraph mid-sentence, with no heading context. Similarity
+                            search then ranks irrelevant chunks highly based on keyword overlap, not meaning.</span>
+                    </div>
+                    <div class="vx-decision-solution">✓ Solution
+                        <span>Implemented a hierarchical "PageIndex" inspired approach: documents are parsed into
+                            a tree of heading nodes with
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">start_index</code>
+                            and
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">end_index</code>
+                            bounds. An LLM reasons over node summaries level by level to drill to the correct section —
+                            no embeddings, no vector DB.</span>
+                    </div>
+                    <div class="vx-decision-impact">True relevance over mathematical similarity. Works on long,
+                        structured
+                        documents where vector RAG fails. Exact text bounds eliminate hallucination-prone context
+                        windows.</div>
+                </div>
+            </div>
+
+            <div class="vx-decision-card vx-reveal">
+                <div class="vx-decision-card-header">
+                    <div class="vx-decision-card-num">02</div>
+                    <div class="vx-decision-card-title">Deepgram for Voice-First UX</div>
+                </div>
+                <div class="vx-decision-card-body">
+                    <div class="vx-decision-problem">⚠ Problem
+                        <span>Domain professionals (doctors, analysts, legal experts) querying dense documents shouldn't
+                            need to type precise technical queries. A voice interface removes the interaction barrier —
+                            but browser-native STT has poor accuracy on domain-specific terminology.</span>
+                    </div>
+                    <div class="vx-decision-solution">✓ Solution
+                        <span>Integrated
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">Deepgram</code>
+                            for high-accuracy, real-time speech-to-text with live browser audio streaming. The POC
+                            was debugged end-to-end — including fixing audio buffer handling that was silently producing
+                            null transcripts.</span>
+                    </div>
+                    <div class="vx-decision-impact">Hands-free, natural interaction. Deepgram accuracy outperforms
+                        browser
+                        STT on technical vocabulary. Zero-latency feel via live streaming (not batch upload).</div>
+                </div>
+            </div>
+
+            <div class="vx-decision-card vx-reveal">
+                <div class="vx-decision-card-header">
+                    <div class="vx-decision-card-num">03</div>
+                    <div class="vx-decision-card-title">Docling Over MarkItDown</div>
+                </div>
+                <div class="vx-decision-card-body">
+                    <div class="vx-decision-problem">⚠ Problem
+                        <span><code
+                                style="color:var(--rose-bright);background:var(--bg);padding:1px 5px;border-radius:2px;">MarkItDown</code>
+                            was the initial ingestion library but could not reliably distinguish heading levels
+                            (Level 1 vs. Level 2 vs. Level 3) in PDFs and DOCX files — collapsing the hierarchy the
+                            tree-structured RAG system depended on entirely.</span>
+                    </div>
+                    <div class="vx-decision-solution">✓ Solution
+                        <span>Swapped ingestion library to
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">Docling</code>:
+                            a document parsing tool designed explicitly to preserve structural semantics, heading
+                            hierarchy,
+                            tables, and reading order — producing the heading level metadata the tree builder
+                            requires.</span>
+                    </div>
+                    <div class="vx-decision-impact">Unblocked the hierarchical tree building pipeline. Heading levels
+                        now
+                        parse accurately, enabling the LLM to traverse meaningful node boundaries during retrieval.
+                    </div>
+                </div>
+            </div>
+
+            <div class="vx-decision-card vx-reveal">
+                <div class="vx-decision-card-header">
+                    <div class="vx-decision-card-num">04</div>
+                    <div class="vx-decision-card-title">Backend Refactor — Monolith to Package</div>
+                </div>
+                <div class="vx-decision-card-body">
+                    <div class="vx-decision-problem">⚠ Problem
+                        <span>The original voice agent was a single monolithic Python script. Model names, API keys,
+                            and defaults were hardcoded throughout — making it impossible to switch models, deploy
+                            to different environments, or update config without touching core logic.</span>
+                    </div>
+                    <div class="vx-decision-solution">✓ Solution
+                        <span>Refactored the entire backend into a structured Python package with strict separation
+                            of concerns. All configuration centralized in
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">config.yaml</code>.
+                            New REST endpoints
+                            (<code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">/api/models</code>,
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">/api/config</code>)
+                            let the frontend pull settings dynamically — no hardcoding.</span>
+                    </div>
+                    <div class="vx-decision-impact">DRY, maintainable codebase. Model switching is a config change, not
+                        a code
+                        change. Frontend and backend are fully decoupled — any client can consume the API.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CODE -->
+    <section class="vx-section" id="code">
+        <div class="vx-sec-label">
+            <span class="vx-sec-label-text">Core Code</span>
+            <span class="vx-sec-label-num">/ 04</span>
+        </div>
+        <h2 class="vx-sec-title vx-reveal">The Tree Traversal Loop</h2>
+        <p class="vx-sec-desc vx-reveal">The heart of the vectorless RAG system: an LLM-guided iterative drill-down
+            that reads node summaries at each tree level and selects the branch most relevant to the query —
+            until it reaches a leaf node.</p>
+
+        <div class="vx-code-block vx-reveal">
+            <div class="vx-code-header">
+                <div class="vx-code-dot red"></div>
+                <div class="vx-code-dot yellow"></div>
+                <div class="vx-code-dot green"></div>
+                <span class="vx-code-filename">rag/retriever.py · traverse_tree()</span>
+            </div>
+            <div class="vx-code-body">
+                <span class="vx-kw">def</span> <span class="vx-fn">traverse_tree</span>(<span
+                    class="vx-var">query</span>: <span class="vx-cls">str</span>, <span class="vx-var">tree</span>:
+                <span class="vx-cls">dict</span>, <span class="vx-var">db</span>) -> <span class="vx-cls">str</span>:
+                <span class="vx-var">current_nodes</span> = <span class="vx-var">tree</span>[<span
+                    class="vx-fn">&#x27;children&#x27;</span>] <span class="vx-cmt"># start at root's children (Level 1
+                    headings)</span>
+
+                <span class="vx-kw">while</span> <span class="vx-var">current_nodes</span>:
+                <span class="vx-cmt"># Build a summary map for the LLM to reason over</span>
+                <span class="vx-var">summaries</span> = {
+                <span class="vx-var">n</span>[<span class="vx-fn">&#x27;id&#x27;</span>]: <span
+                    class="vx-fn">f</span><span class="vx-str">"{n['heading']}: {n['summary']}"</span>
+                <span class="vx-kw">for</span> <span class="vx-var">n</span> <span class="vx-kw">in</span> <span
+                    class="vx-var">current_nodes</span>
+                }
+
+                <span class="vx-cmt"># Ask the LLM which node is most relevant to the query</span>
+                <span class="vx-var">selected_id</span> = <span class="vx-fn">llm_select_node</span>(<span
+                    class="vx-var">query</span>, <span class="vx-var">summaries</span>)
+
+                <span class="vx-kw">if</span> <span class="vx-var">selected_id</span> <span class="vx-kw">is</span>
+                <span class="vx-kw">None</span>:
+                <span class="vx-kw">break</span> <span class="vx-cmt"># LLM found no relevant branch</span>
+
+                <span class="vx-var">selected_node</span> = <span class="vx-fn">next</span>(
+                (<span class="vx-var">n</span> <span class="vx-kw">for</span> <span class="vx-var">n</span> <span
+                    class="vx-kw">in</span> <span class="vx-var">current_nodes</span> <span class="vx-kw">if</span>
+                <span class="vx-var">n</span>[<span class="vx-fn">&#x27;id&#x27;</span>] == <span
+                    class="vx-var">selected_id</span>), <span class="vx-kw">None</span>
+                )
+
+                <span class="vx-kw">if</span> <span class="vx-kw">not</span> <span
+                    class="vx-var">selected_node</span>[<span class="vx-fn">&#x27;children&#x27;</span>]:
+                <span class="vx-cmt"># Leaf node reached — extract exact text slice</span>
+                <span class="vx-kw">return</span> <span class="vx-fn">db.get_text_slice</span>(
+                <span class="vx-var">start</span>=<span class="vx-var">selected_node</span>[<span
+                    class="vx-fn">&#x27;start_index&#x27;</span>],
+                <span class="vx-var">end</span>=<span class="vx-var">selected_node</span>[<span
+                    class="vx-fn">&#x27;end_index&#x27;</span>],
+                )
+
+                <span class="vx-cmt"># Not a leaf — drill into children at next level</span>
+                <span class="vx-var">current_nodes</span> = <span class="vx-var">selected_node</span>[<span
+                    class="vx-fn">&#x27;children&#x27;</span>]
+
+                <span class="vx-kw">return</span> <span class="vx-kw">None</span> <span class="vx-cmt"># No relevant
+                    section found</span>
+            </div>
+        </div>
+
+        <div class="vx-divider-line"></div>
+
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:8px;" class="vx-reveal">
+            Why This Beats Cosine Similarity</h3>
+        <p style="color:var(--text-muted);font-size:13px;max-width:640px;line-height:1.8;" class="vx-reveal">
+            A vector similarity search finds chunks whose <em>embedding</em> is close to the query embedding in
+            high-dimensional space. That's a useful heuristic — but it's blind to document structure, prone to
+            topical overlap between unrelated sections, and completely fails when the answer is in a section whose
+            heading doesn't appear in the query. The tree traversal approach lets the LLM reason: <em>"Section 4.3
+                — Credit Risk Models — is where an answer about loan default probabilities would live"</em> — the same
+            reasoning a human expert would apply. The
+            <code
+                style="color:var(--rose-bright);background:var(--bg3);padding:2px 6px;border-radius:2px;">start_index/end_index</code>
+            system then pulls the exact text — no chunking artifacts, no context bleed.
+        </p>
+    </section>
+
+    <!-- CHALLENGES -->
+    <section class="vx-section" id="challenges">
+        <div class="vx-sec-label">
+            <span class="vx-sec-label-text">Challenges</span>
+            <span class="vx-sec-label-num">/ 05</span>
+        </div>
+        <h2 class="vx-sec-title vx-reveal">Problems &amp; How They Were Solved</h2>
+        <p class="vx-sec-desc vx-reveal">Each blocker here was a lesson in why the choice of underlying tools
+            matters as much as the architecture above them.</p>
+
+        <div class="vx-challenges-grid">
+            <div class="vx-challenge-card vx-reveal">
+                <span class="vx-challenge-icon">🌲</span>
+                <div class="vx-challenge-title">Hierarchy Loss During Ingestion</div>
+                <div class="vx-challenge-desc">The initial ingestion library
+                    <code style="color:var(--accent-amber);">MarkItDown</code> could not reliably distinguish heading
+                    levels (L1 vs. L2 vs. L3) in PDFs and DOCX files — collapsing the entire document
+                    into a flat Markdown string with incorrect or missing heading depth metadata.
+                    This directly blocked the tree builder from constructing a meaningful node hierarchy.
+                </div>
+                <div class="vx-challenge-fix">✓ Replaced with Docling — a document intelligence library built
+                    explicitly to preserve structural semantics, heading hierarchy, and reading order. Tree
+                    construction now receives accurate Level 1/2/3 metadata for every heading node.</div>
+            </div>
+
+            <div class="vx-challenge-card vx-reveal">
+                <span class="vx-challenge-icon">🎤</span>
+                <div class="vx-challenge-title">Null Deepgram Transcripts</div>
+                <div class="vx-challenge-desc">The Deepgram STT proof-of-concept was returning null transcripts in the
+                    browser. The audio was being captured, the WebSocket connection was live — but the final
+                    transcript handler received empty data. The bug was silent: no errors, no warnings, just
+                    empty results that looked like API failure.</div>
+                <div class="vx-challenge-fix">✓ The issue was in audio buffer encoding and chunking before sending
+                    to the Deepgram WebSocket. Fixed the browser audio capture pipeline to correctly encode PCM
+                    chunks and handle the transcript event sequence, ensuring the final transcript resolves to
+                    populated text.</div>
+            </div>
+
+            <div class="vx-challenge-card vx-reveal">
+                <span class="vx-challenge-icon">📁</span>
+                <div class="vx-challenge-title">DOCX Format Errors &amp; UI State Bugs</div>
+                <div class="vx-challenge-desc">Uploading Microsoft Word documents initially threw format errors —
+                    the backend had no DOCX-aware parser. Separately, the Knowledge Document Library had two
+                    persistent UI bugs: documents would reappear after refresh despite being deactivated, and
+                    activating a document triggered a
+                    <code style="color:var(--accent-amber);">json not defined</code> runtime error in the frontend.
+                </div>
+                <div class="vx-challenge-fix">✓ Added <code style="color:var(--accent-green);">mammoth</code> and
+                    <code style="color:var(--accent-green);">docx2txt</code> as DOCX fallback parsers with a
+                    format-detection routing layer. Fixed the Knowledge Library state management: corrected the
+                    activation handler's JSON serialization call and cleared the leftover default document
+                    initialization logic that persisted across page refreshes.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LEARNINGS -->
+    <section class="vx-section" id="learnings">
+        <div class="vx-sec-label">
+            <span class="vx-sec-label-text">Learnings</span>
+            <span class="vx-sec-label-num">/ 06</span>
+        </div>
+        <h2 class="vx-sec-title vx-reveal">Three Principles Internalized</h2>
+        <p class="vx-sec-desc vx-reveal">The patterns learned building a production-grade AI document system —
+            each one applicable well beyond this project.</p>
+
+        <div class="vx-learnings-grid">
+            <div class="vx-learning-card vx-reveal">
+                <div class="vx-learning-num">01</div>
+                <div class="vx-learning-title">Structure Is the Core Asset</div>
+                <div class="vx-learning-desc">The entire vectorless RAG strategy only works because document structure
+                    is preserved. The moment you chunk a document randomly — discarding headings, splitting across
+                    sections, ignoring hierarchy — you've destroyed the one artifact that makes accurate retrieval
+                    possible. Choosing the right ingestion tool (Docling over MarkItDown) wasn't a secondary concern:
+                    it was the foundational enabling condition for everything else.</div>
+            </div>
+            <div class="vx-learning-card vx-reveal">
+                <div class="vx-learning-num">02</div>
+                <div class="vx-learning-title">Silent Failures Are the Worst Kind</div>
+                <div class="vx-learning-desc">The Deepgram null transcript bug produced no errors — just empty results.
+                    The system appeared to work end-to-end but was silently failing at the audio encoding step.
+                    In any pipeline that processes external input (voice, files, API) through multiple stages, each
+                    stage must emit observable, verifiable signals — not just assume its output is correct. Silent
+                    failures cost far more debugging time than loud ones.</div>
+            </div>
+            <div class="vx-learning-card vx-reveal">
+                <div class="vx-learning-num">03</div>
+                <div class="vx-learning-title">Config as Code Is Non-Negotiable</div>
+                <div class="vx-learning-desc">A hardcoded model name buried inside a 400-line Python script is a
+                    deployment blocker. Centralizing configuration in
+                    <code style="color:var(--rose-bright);">config.yaml</code> and exposing it via REST endpoints
+                    transformed the system from "works on my machine" to something redeployable, testable, and
+                    actually configurable. This is the architectural lesson that makes DRY code a product requirement,
+                    not just a style preference.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="vx-footer">
+        <div>
+            <div class="vx-footer-brand">Zenisth Voice Agent</div>
+            <p style="font-size:11px;color:var(--text-dim);margin-top:8px;">Internship Project · Zenisth AI ·
+                Dark Editorial Design System v1.0</p>
+        </div>
+        <div class="vx-footer-note">
+            <p style="color:var(--text-muted);">Syne · DM Mono · Fraunces</p>
+            <p style="color:var(--text-dim);margin-top:4px;">Python · Deepgram · OpenAI · Docling · Flask</p>
+        </div>
+    </footer>
+
+    <script>
+        // ── SCROLL PROGRESS BAR ──
+        const progressBar = document.getElementById('vx-progress-bar');
+        window.addEventListener('scroll', () => {
+            const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight) * 100;
+            progressBar.style.width = (isNaN(pct) ? 0 : pct) + '%';
+        });
+
+        // ── CURSOR GLOW ──
+        const cursorGlow = document.getElementById('vx-cursor-glow');
+        document.addEventListener('mousemove', (e) => {
+            cursorGlow.style.left = e.clientX + 'px';
+            cursorGlow.style.top = e.clientY + 'px';
+        });
+
+        // ── INTERSECTION OBSERVER — SCROLL REVEAL ──
+        const reveals = document.querySelectorAll('.vx-reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.07, rootMargin: '0px 0px -40px 0px' });
+
+        reveals.forEach((el, i) => {
+            el.style.transitionDelay = (i % 4) * 0.07 + 's';
+            observer.observe(el);
+        });
+
+        // ── STAT COUNTER ANIMATION — text stats kept as-is ──
+        const statNums = document.querySelectorAll('.vx-stat-num');
+        const statData = [
+            { val: 0, suffix: '', isNum: true },
+            { val: 'STT', suffix: '', isNum: false },
+            { val: '∞', suffix: '', isNum: false },
+            { val: 'DRY', suffix: '', isNum: false },
+        ];
+
+        function animateCounter(el, target, suffix, duration = 1200) {
+            let start = null;
+            const step = (ts) => {
+                if (!start) start = ts;
+                const progress = Math.min((ts - start) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.floor(eased * target) + suffix;
+                if (progress < 1) requestAnimationFrame(step);
+                else el.textContent = target + suffix;
+            };
+            requestAnimationFrame(step);
+        }
+
+        const statObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const idx = [...statNums].indexOf(entry.target);
+                    if (idx !== -1) {
+                        const d = statData[idx];
+                        if (d.isNum) animateCounter(entry.target, d.val, d.suffix);
+                        else entry.target.textContent = d.val;
+                    }
+                    statObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        statNums.forEach(el => statObserver.observe(el));
+
+        // ── FLOW STEP STAGGER ──
+        document.querySelectorAll('.vx-flow-step').forEach((step, i) => {
+            step.style.transitionDelay = i * 0.05 + 's';
+        });
+    </script>
+</body>
+
+</html>
