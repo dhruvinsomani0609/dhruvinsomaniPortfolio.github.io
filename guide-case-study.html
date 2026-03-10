@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUIDE — AI UI Generator · Case Study</title>
+    <meta name="description"
+        content="Case study for GUIDE: an LLM-driven GUI prototyping system that generates HTML interfaces from natural language prompts, with Figma plugin integration and local Ollama inference.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="guide-case-study.css">
+</head>
+
+<body>
+
+    <div id="g-progress-bar"></div>
+    <div class="g-cursor-glow" id="g-cursor-glow"></div>
+
+    <!-- NAV -->
+    <nav>
+        <div class="g-nav-title">GUIDE — AI UI Generator</div>
+        <div class="g-nav-links">
+            <a href="#overview">Overview</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#decisions">Decisions</a>
+            <a href="#code">Code</a>
+            <a href="#challenges">Challenges</a>
+            <a href="#learnings">Learnings</a>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="g-hero">
+        <div class="g-hero-scanline"></div>
+        <div class="g-hero-grid"></div>
+
+        <div class="g-hero-eyebrow"><span>Personal Project · LLM Research</span></div>
+        <h1 class="g-hero-title">
+            <span class="line1">GUIDE</span>
+            <span class="line2">AI UI Generator</span>
+        </h1>
+        <p class="g-hero-sub">An LLM-driven GUI prototyping system that converts natural language descriptions
+            into working HTML interfaces — rendered in a browser or injected directly into Figma.</p>
+        <div class="g-hero-meta">
+            <div class="g-hero-meta-item">
+                <div class="g-hero-meta-label">Role</div>
+                <div class="g-hero-meta-value">Full-Stack Developer</div>
+            </div>
+            <div class="g-hero-meta-item">
+                <div class="g-hero-meta-label">Type</div>
+                <div class="g-hero-meta-value">Personal / Research</div>
+            </div>
+            <div class="g-hero-meta-item">
+                <div class="g-hero-meta-label">Inference</div>
+                <div class="g-hero-meta-value">Local · Ollama</div>
+            </div>
+            <div class="g-hero-meta-item">
+                <div class="g-hero-meta-label">Integration</div>
+                <div class="g-hero-meta-value">Figma Plugin API</div>
+            </div>
+        </div>
+        <div class="g-hero-tags">
+            <span class="g-htag">Python</span>
+            <span class="g-htag">Flask</span>
+            <span class="g-htag">Ollama</span>
+            <span class="g-htag">LLaMA 3.2</span>
+            <span class="g-htag">HTML / CSS</span>
+            <span class="g-htag">JavaScript</span>
+            <span class="g-htag">Figma Plugin API</span>
+            <span class="g-htag">RICO Dataset</span>
+        </div>
+    </header>
+
+    <!-- OVERVIEW -->
+    <section class="g-section" id="overview">
+        <div class="g-sec-label">
+            <span class="g-sec-label-text">Overview</span>
+            <span class="g-sec-label-num">/ 01</span>
+        </div>
+
+        <div class="g-stats-row g-reveal">
+            <div class="g-stat-cell">
+                <div class="g-stat-num">2</div>
+                <div class="g-stat-label">LLM backends supported (LLaMA 3.2, CodeLlama)</div>
+            </div>
+            <div class="g-stat-cell">
+                <div class="g-stat-num">2</div>
+                <div class="g-stat-label">Rendering modes — browser iframe &amp; Figma canvas</div>
+            </div>
+            <div class="g-stat-cell">
+                <div class="g-stat-num">100%</div>
+                <div class="g-stat-label">Local inference — zero API costs, full privacy</div>
+            </div>
+            <div class="g-stat-cell">
+                <div class="g-stat-num">1</div>
+                <div class="g-stat-label">Figma plugin that converts HTML into design nodes</div>
+            </div>
+        </div>
+
+        <h2 class="g-sec-title g-reveal">The Problem Space</h2>
+        <p class="g-sec-desc g-reveal">Translating a product idea into a visual UI prototype is a slow, manual process.
+            Designers and developers spend hours converting textual requirements into visual interfaces. GUIDE automates
+            this with LLMs — turning a single natural language sentence into a working, styled HTML layout ready for
+            browser preview or direct injection into a Figma canvas.</p>
+
+        <div class="g-divider-line"></div>
+
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:24px;" class="g-reveal">
+            Tech Stack</h3>
+        <div class="g-stack-grid">
+            <div class="g-stack-card g-reveal">
+                <span class="g-stack-icon">🐍</span>
+                <div class="g-stack-name">Python + Flask</div>
+                <div class="g-stack-role">Backend server · Prompt handling</div>
+            </div>
+            <div class="g-stack-card g-reveal">
+                <span class="g-stack-icon">🦙</span>
+                <div class="g-stack-name">Ollama</div>
+                <div class="g-stack-role">Local LLM runtime · Zero API cost</div>
+            </div>
+            <div class="g-stack-card g-reveal">
+                <span class="g-stack-icon">🤖</span>
+                <div class="g-stack-name">LLaMA 3.2</div>
+                <div class="g-stack-role">Primary UI generation model</div>
+            </div>
+            <div class="g-stack-card g-reveal">
+                <span class="g-stack-icon">💻</span>
+                <div class="g-stack-name">CodeLlama</div>
+                <div class="g-stack-role">Code-specialized HTML generation</div>
+            </div>
+            <div class="g-stack-card g-reveal">
+                <span class="g-stack-icon">🎨</span>
+                <div class="g-stack-name">Figma Plugin API</div>
+                <div class="g-stack-role">Canvas injection · Node generation</div>
+            </div>
+            <div class="g-stack-card g-reveal">
+                <span class="g-stack-icon">🌐</span>
+                <div class="g-stack-name">HTML + CSS + JS</div>
+                <div class="g-stack-role">Frontend UI · iframe preview</div>
+            </div>
+            <div class="g-stack-card g-reveal">
+                <span class="g-stack-icon">🗂️</span>
+                <div class="g-stack-name">RICO Dataset</div>
+                <div class="g-stack-role">Mobile UI patterns · Prompt guidance</div>
+            </div>
+            <div class="g-stack-card g-reveal">
+                <span class="g-stack-icon">🔧</span>
+                <div class="g-stack-name">config.py</div>
+                <div class="g-stack-role">OLLAMA_URL · model · debug env vars</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ARCHITECTURE -->
+    <section class="g-section" id="architecture">
+        <div class="g-sec-label">
+            <span class="g-sec-label-text">Architecture</span>
+            <span class="g-sec-label-num">/ 02</span>
+        </div>
+        <h2 class="g-sec-title g-reveal">Prompt to Pixels — The Full Pipeline</h2>
+        <p class="g-sec-desc g-reveal">A simple but effective event chain: user describes a UI in plain English, the LLM
+            reasons about structure and generates HTML + CSS, then the frontend routes the output to either a live
+            browser preview or Figma component nodes.</p>
+
+        <div class="g-flow-grid g-reveal">
+            <div class="g-flow-step">
+                <div class="g-flow-step-num">01</div>
+                <span class="g-flow-step-icon">✍️</span>
+                <div class="g-flow-step-title">Prompt Input</div>
+                <div class="g-flow-step-desc">User enters a natural language UI description. Example prompts are
+                    provided as chip buttons. Multilingual input is supported.</div>
+                <div class="g-flow-connector"></div>
+            </div>
+            <div class="g-flow-step">
+                <div class="g-flow-step-num">02</div>
+                <span class="g-flow-step-icon">⚙️</span>
+                <div class="g-flow-step-title">Backend Processing</div>
+                <div class="g-flow-step-desc">The Python Flask backend receives the prompt and wraps it in a structured
+                    system prompt that instructs the LLM to output valid HTML + CSS only.</div>
+                <div class="g-flow-connector"></div>
+            </div>
+            <div class="g-flow-step">
+                <div class="g-flow-step-num">03</div>
+                <span class="g-flow-step-icon">🦙</span>
+                <div class="g-flow-step-title">Ollama LLM Inference</div>
+                <div class="g-flow-step-desc">The structured prompt is sent to the local Ollama server via
+                    <code
+                        style="color:var(--teal-bright);background:var(--bg);padding:1px 4px;border-radius:2px;">/api/chat</code>.
+                    LLaMA 3.2 or CodeLlama generates the full UI layout as HTML + CSS.
+                </div>
+            </div>
+            <div class="g-flow-step">
+                <div class="g-flow-step-num">04</div>
+                <span class="g-flow-step-icon">🔄</span>
+                <div class="g-flow-step-title">HTML Returned</div>
+                <div class="g-flow-step-desc">The backend returns the raw generated HTML to the frontend. The
+                    <code
+                        style="color:var(--teal-bright);background:var(--bg);padding:1px 4px;border-radius:2px;">/preview</code>
+                    endpoint also allows direct rendering requests.
+                </div>
+                <div class="g-flow-connector"></div>
+            </div>
+            <div class="g-flow-step">
+                <div class="g-flow-step-num">05</div>
+                <span class="g-flow-step-icon">🖥️</span>
+                <div class="g-flow-step-title">Dual Rendering</div>
+                <div class="g-flow-step-desc"><strong style="color:var(--text);">Browser:</strong> HTML injected into an
+                    iframe or opened via blob URL in a new tab.
+                    <strong style="color:var(--text);">Figma:</strong> DOM is parsed — <code
+                        style="color:var(--teal-bright);">&lt;input&gt;</code>,
+                    <code style="color:var(--teal-bright);">&lt;button&gt;</code>, <code
+                        style="color:var(--teal-bright);">&lt;h1&gt;</code> mapped to Figma nodes and injected into the
+                    canvas.
+                </div>
+            </div>
+        </div>
+
+        <div class="g-divider-line"></div>
+
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:16px;" class="g-reveal">
+            HTML → Figma Element Mapping</h3>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;" class="g-reveal">
+            <div style="padding:16px 18px;border:1px solid var(--line);border-radius:4px;background:var(--bg3);">
+                <div
+                    style="font-size:11px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.15em;">
+                    HTML Element</div>
+                <code style="color:var(--teal-bright);font-size:13px;">&lt;input&gt;</code>
+                <div style="margin-top:8px;font-size:11px;color:var(--accent-green);">→ Figma Input Component</div>
+            </div>
+            <div style="padding:16px 18px;border:1px solid var(--line);border-radius:4px;background:var(--bg3);">
+                <div
+                    style="font-size:11px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.15em;">
+                    HTML Element</div>
+                <code style="color:var(--teal-bright);font-size:13px;">&lt;button&gt;</code>
+                <div style="margin-top:8px;font-size:11px;color:var(--accent-green);">→ Figma Button Component</div>
+            </div>
+            <div style="padding:16px 18px;border:1px solid var(--line);border-radius:4px;background:var(--bg3);">
+                <div
+                    style="font-size:11px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.15em;">
+                    HTML Element</div>
+                <code style="color:var(--teal-bright);font-size:13px;">&lt;label&gt;</code>
+                <div style="margin-top:8px;font-size:11px;color:var(--accent-green);">→ Figma Text Node</div>
+            </div>
+            <div style="padding:16px 18px;border:1px solid var(--line);border-radius:4px;background:var(--bg3);">
+                <div
+                    style="font-size:11px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.15em;">
+                    HTML Element</div>
+                <code style="color:var(--teal-bright);font-size:13px;">&lt;h1&gt; — &lt;h3&gt;</code>
+                <div style="margin-top:8px;font-size:11px;color:var(--accent-green);">→ Figma Heading Text</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- KEY DECISIONS -->
+    <section class="g-section" id="decisions">
+        <div class="g-sec-label">
+            <span class="g-sec-label-text">Key Decisions</span>
+            <span class="g-sec-label-num">/ 03</span>
+        </div>
+        <h2 class="g-sec-title g-reveal">4 Pivotal Engineering Choices</h2>
+        <p class="g-sec-desc g-reveal">Each decision directly improved generation quality, rendering flexibility,
+            or developer experience — informed by the research paper "GUIDE: LLM-Driven GUI Generation Decomposition
+            for Automated Prototyping."</p>
+
+        <div class="g-decisions-grid">
+            <div class="g-decision-card g-reveal">
+                <div class="g-decision-card-header">
+                    <div class="g-decision-card-num">01</div>
+                    <div class="g-decision-card-title">Switched from JSON to HTML-Based LLM Output</div>
+                </div>
+                <div class="g-decision-card-body">
+                    <div class="g-decision-problem">⚠ Problem
+                        <span>Initial versions instructed the LLM to output structured JSON component trees.
+                            JSON format severely limited layout flexibility — nested positioning, inline styles,
+                            and responsive designs could not be expressed cleanly.</span>
+                    </div>
+                    <div class="g-decision-solution">✓ Solution
+                        <span>Switched LLM output target to raw
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">HTML + CSS</code>.
+                            HTML is a natural, expressive UI grammar that LLMs understand far better than ad-hoc JSON
+                            schemas —
+                            and it renders directly in a browser without a translation layer.</span>
+                    </div>
+                    <div class="g-decision-impact">Dramatically improved generation quality and layout richness
+                        instantly.
+                        Removed an entire JSON→DOM translation pipeline from the codebase.</div>
+                </div>
+            </div>
+
+            <div class="g-decision-card g-reveal">
+                <div class="g-decision-card-header">
+                    <div class="g-decision-card-num">02</div>
+                    <div class="g-decision-card-title">Ollama Local LLM Inference</div>
+                </div>
+                <div class="g-decision-card-body">
+                    <div class="g-decision-problem">⚠ Problem
+                        <span>Cloud LLM APIs (GPT, Gemini) incur per-token costs, have rate limits, and send user
+                            prompts to remote servers — unsuitable for a research tool that needed rapid, free iteration
+                            and private experimentation.</span>
+                    </div>
+                    <div class="g-decision-solution">✓ Solution
+                        <span>Integrated
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">Ollama</code>
+                            as the local inference runtime. Configuration exposed via
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">OLLAMA_URL</code>
+                            and
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">OLLAMA_MODEL</code>
+                            env vars, making model switching (llama3.2 ↔ codellama) a one-line config change.</span>
+                    </div>
+                    <div class="g-decision-impact">Zero inference costs. Unlimited iteration speed. Complete data
+                        privacy.
+                        Swappable model backends with no code changes.</div>
+                </div>
+            </div>
+
+            <div class="g-decision-card g-reveal">
+                <div class="g-decision-card-header">
+                    <div class="g-decision-card-num">03</div>
+                    <div class="g-decision-card-title">iframe + Blob URL Preview System</div>
+                </div>
+                <div class="g-decision-card-body">
+                    <div class="g-decision-problem">⚠ Problem
+                        <span>After obtaining generated HTML, there was no safe, sandboxed way to preview it without
+                            running a separate server per generation, risking script injection into the main app
+                            page.</span>
+                    </div>
+                    <div class="g-decision-solution">✓ Solution
+                        <span>Built a dual-mode preview system:
+                            (1) <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">iframe</code>
+                            renders the HTML inline in a sandboxed container;
+                            (2) blob URL wraps the HTML in a temporary
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">Blob</code>
+                            object and opens it in a new browser tab for a full-page preview.</span>
+                    </div>
+                    <div class="g-decision-impact">Safe, instant UI preview with zero server round-trips for rendering.
+                        Users can open any generated UI as a full page in one click.</div>
+                </div>
+            </div>
+
+            <div class="g-decision-card g-reveal">
+                <div class="g-decision-card-header">
+                    <div class="g-decision-card-num">04</div>
+                    <div class="g-decision-card-title">HTML → Figma Node Parser</div>
+                </div>
+                <div class="g-decision-card-body">
+                    <div class="g-decision-problem">⚠ Problem
+                        <span>Figma doesn't accept raw HTML. Designers using the Figma plugin needed generated UIs
+                            to appear as properly structured Figma components — not as flat images or embedded
+                            iframes.</span>
+                    </div>
+                    <div class="g-decision-solution">✓ Solution
+                        <span>Implemented
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">generateFromHTML()</code>:
+                            a DOM parser that traverses the generated HTML, maps recognized semantic elements
+                            (<code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">&lt;input&gt;</code>,
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">&lt;button&gt;</code>,
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">&lt;h1&gt;</code>)
+                            to Figma primitives, and injects them into the canvas via the Figma Plugin API.</span>
+                    </div>
+                    <div class="g-decision-impact">Designers get editable, structured Figma components — not
+                        screenshots.
+                        The "Use in Figma" button closes the gap between AI generation and real design workflows.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CODE -->
+    <section class="g-section" id="code">
+        <div class="g-sec-label">
+            <span class="g-sec-label-text">Core Code</span>
+            <span class="g-sec-label-num">/ 04</span>
+        </div>
+        <h2 class="g-sec-title g-reveal">The GUIDEPrototyper Class</h2>
+        <p class="g-sec-desc g-reveal">The central Python class that orchestrates the LLM prompt pipeline — from
+            receiving the user's description to instructing the model and returning a complete HTML + CSS layout.</p>
+
+        <div class="g-code-block g-reveal">
+            <div class="g-code-header">
+                <div class="g-code-dot red"></div>
+                <div class="g-code-dot yellow"></div>
+                <div class="g-code-dot green"></div>
+                <span class="g-code-filename">app.py · GUIDEPrototyper class</span>
+            </div>
+            <div class="g-code-body">
+                <span class="g-dec">@dataclass</span>
+                <span class="g-kw">class</span> <span class="g-cls">GUIDEPrototyper</span>:
+                <span class="g-var">model</span>: <span class="g-cls">str</span> = <span
+                    class="g-fn">os.getenv</span>(<span class="g-str">"OLLAMA_MODEL"</span>, <span
+                    class="g-str">"llama3.2"</span>)
+                <span class="g-var">base_url</span>: <span class="g-cls">str</span> = <span
+                    class="g-fn">os.getenv</span>(<span class="g-str">"OLLAMA_URL"</span>, <span
+                    class="g-str">"http://localhost:11434"</span>)
+
+                <span class="g-kw">def</span> <span class="g-fn">generate_ui</span>(<span class="g-var">self</span>,
+                <span class="g-var">prompt</span>: <span class="g-cls">str</span>) -> <span class="g-cls">str</span>:
+                <span class="g-cmt">"""Send a structured prompt to Ollama and return HTML + CSS."""</span>
+                <span class="g-var">system_msg</span> = (
+                <span class="g-str">"You are a UI generation assistant. "</span>
+                <span class="g-str">"Given a description, output ONLY valid HTML + CSS "</span>
+                <span class="g-str">"representing that user interface. No explanations. No markdown."</span>
+                )
+                <span class="g-var">response</span> = <span class="g-fn">requests.post</span>(
+                <span class="g-fn">f</span><span class="g-str">"{self.base_url}/api/chat"</span>,
+                <span class="g-var">json</span>={
+                <span class="g-str">"model"</span>: <span class="g-var">self</span>.<span class="g-var">model</span>,
+                <span class="g-str">"messages"</span>: [
+                {<span class="g-str">"role"</span>: <span class="g-str">"system"</span>, <span
+                    class="g-str">"content"</span>: <span class="g-var">system_msg</span>},
+                {<span class="g-str">"role"</span>: <span class="g-str">"user"</span>, <span
+                    class="g-str">"content"</span>: <span class="g-var">prompt</span>},
+                ],
+                <span class="g-str">"stream"</span>: <span class="g-kw">False</span>,
+                },
+                )
+                <span class="g-var">data</span> = <span class="g-var">response</span>.<span class="g-fn">json</span>()
+                <span class="g-kw">return</span> <span class="g-var">data</span>[<span
+                    class="g-str">"message"</span>][<span class="g-str">"content"</span>]
+            </div>
+        </div>
+
+        <div class="g-divider-line"></div>
+
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:8px;" class="g-reveal">Why
+            Structured Prompting Matters</h3>
+        <p style="color:var(--text-muted);font-size:13px;max-width:640px;line-height:1.8;" class="g-reveal">
+            Without the system message constraining the output format, LLMs return conversational text, markdown code
+            fences, and explanations — none of which can be rendered as HTML. The system prompt
+            acts as a strict output contract: the LLM is instructed to behave as a
+            <code
+                style="color:var(--teal-bright);background:var(--bg3);padding:2px 6px;border-radius:2px;">UI generation machine</code>,
+            not a chatbot. This single design decision is the difference between
+            a working prototype tool and a code snippet generator.
+        </p>
+    </section>
+
+    <!-- CHALLENGES -->
+    <section class="g-section" id="challenges">
+        <div class="g-sec-label">
+            <span class="g-sec-label-text">Challenges</span>
+            <span class="g-sec-label-num">/ 05</span>
+        </div>
+        <h2 class="g-sec-title g-reveal">Problems &amp; How They Were Solved</h2>
+        <p class="g-sec-desc g-reveal">The hardest part of building a prompt-to-UI system isn't the LLM integration —
+            it's dealing with the unpredictability of LLM output and bridging two fundamentally different
+            representation systems: HTML and Figma nodes.</p>
+
+        <div class="g-challenges-grid">
+            <div class="g-challenge-card g-reveal">
+                <span class="g-challenge-icon">🔀</span>
+                <div class="g-challenge-title">Inconsistent LLM Output Structure</div>
+                <div class="g-challenge-cause">The LLM sometimes returned markdown-fenced code blocks
+                    (<code style="color:var(--accent-amber);">```html</code>), prose explanations, or
+                    mixed text-and-HTML — none of which render directly in an iframe. The frontend had no
+                    reliable way to extract just the HTML.</div>
+                <div class="g-challenge-fix">✓ The system prompt was tightened to explicitly forbid all non-HTML output.
+                    A post-processing strip was also added to remove common markdown artifacts before injection.</div>
+            </div>
+
+            <div class="g-challenge-card g-reveal">
+                <span class="g-challenge-icon">🧩</span>
+                <div class="g-challenge-title">HTML→Figma Component Mapping</div>
+                <div class="g-challenge-cause">HTML and Figma have fundamentally different component models.
+                    Mapping arbitrary, LLM-generated HTML to Figma's node primitives required handling unknown
+                    nesting depths, inline styles, and elements for which Figma has no direct equivalent.</div>
+                <div class="g-challenge-fix">✓ Built a focused element whitelist — only semantic UI tags
+                    (<code style="color:var(--accent-green);">input</code>, <code
+                        style="color:var(--accent-green);">button</code>,
+                    <code style="color:var(--accent-green);">label</code>, <code
+                        style="color:var(--accent-green);">h1–h3</code>)
+                    are mapped. Unknown elements are skipped gracefully, preventing Figma plugin crashes.
+                </div>
+            </div>
+
+            <div class="g-challenge-card g-reveal">
+                <span class="g-challenge-icon">🏗️</span>
+                <div class="g-challenge-title">Complex &amp; Responsive Layouts</div>
+                <div class="g-challenge-cause">Prompt-based generation degrades on complex UI descriptions.
+                    Nested component structures, grid/flexbox layouts, and responsive breakpoints are
+                    difficult for a local 8B-parameter model to handle reliably in a single generation pass.</div>
+                <div class="g-challenge-fix">✓ Decomposed prompts into simple, specific UI sections rather than
+                    trying to generate a full page at once. RICO dataset integration is planned to provide
+                    real layout patterns as few-shot examples in the prompt context.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LEARNINGS -->
+    <section class="g-section" id="learnings">
+        <div class="g-sec-label">
+            <span class="g-sec-label-text">Learnings</span>
+            <span class="g-sec-label-num">/ 06</span>
+        </div>
+        <h2 class="g-sec-title g-reveal">Three Principles Internalized</h2>
+        <p class="g-sec-desc g-reveal">Building a system where an LLM is the primary code generator — not a developer
+            assistant — surfaces fundamentally different engineering challenges than traditional software.</p>
+
+        <div class="g-learnings-grid">
+            <div class="g-learning-card g-reveal">
+                <div class="g-learning-num">01</div>
+                <div class="g-learning-title">Prompts Are Your Primary API</div>
+                <div class="g-learning-desc">In LLM-driven systems, the system prompt is the contract between your
+                    application and the model. A vague prompt produces vague output. Constraining the model to a strict
+                    output
+                    format — and explicitly forbidding everything else — is the single most effective technique for
+                    making LLM output reliable enough to pipe directly into a rendering pipeline.</div>
+            </div>
+            <div class="g-learning-card g-reveal">
+                <div class="g-learning-num">02</div>
+                <div class="g-learning-title">Domain Representations Don't Translate</div>
+                <div class="g-learning-desc">HTML and Figma's node model are both UI representations, but they are not
+                    isomorphic. Every element mapping decision reveals an impedance mismatch: styles, positioning,
+                    inheritance,
+                    and layout models all differ. Building an LLM-to-design-tool bridge requires explicitly
+                    acknowledging
+                    these gaps and designing around them, rather than assuming one maps cleanly to the other.</div>
+            </div>
+            <div class="g-learning-card g-reveal">
+                <div class="g-learning-num">03</div>
+                <div class="g-learning-title">Local Inference Enables New Workflows</div>
+                <div class="g-learning-desc">Running LLMs locally via Ollama removes the constraints that cloud APIs
+                    impose: rate limits, per-call costs, and privacy concerns. This shifts the bottleneck from
+                    budget to compute — and opens up tight iteration loops that would be economically impractical with
+                    remote inference. For research and rapid prototyping, local inference is worth its setup cost.</div>
+            </div>
+        </div>
+
+        <div class="g-divider-line"></div>
+
+        <!-- ROADMAP -->
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:24px;" class="g-reveal">
+            Roadmap &amp; Future Plans</h3>
+        <div class="g-roadmap-grid g-reveal">
+            <div class="g-roadmap-item">
+                <div class="g-roadmap-dot"></div>
+                <div class="g-roadmap-text">RICO dataset integration for few-shot layout guidance in prompts</div>
+            </div>
+            <div class="g-roadmap-item">
+                <div class="g-roadmap-dot"></div>
+                <div class="g-roadmap-text">OCR-based UI generation from screenshots and wireframe images</div>
+            </div>
+            <div class="g-roadmap-item">
+                <div class="g-roadmap-dot"></div>
+                <div class="g-roadmap-text">Improved HTML → Figma parser for deeply nested components</div>
+            </div>
+            <div class="g-roadmap-item">
+                <div class="g-roadmap-dot"></div>
+                <div class="g-roadmap-text">Dataset + LLM hybrid: real layout patterns + model reasoning</div>
+            </div>
+            <div class="g-roadmap-item">
+                <div class="g-roadmap-dot"></div>
+                <div class="g-roadmap-text">Support for responsive UI generation with breakpoint-aware layouts</div>
+            </div>
+            <div class="g-roadmap-item">
+                <div class="g-roadmap-dot"></div>
+                <div class="g-roadmap-text">UI component library integration (shadcn, Material) via prompt hints</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="g-footer">
+        <div>
+            <div class="g-footer-brand">GUIDE — AI UI Generator</div>
+            <p style="font-size:11px;color:var(--text-dim);margin-top:8px;">Personal Project · LLM Research · Dark
+                Editorial
+                Design System v1.0</p>
+        </div>
+        <div class="g-footer-note">
+            <p style="color:var(--text-muted);">Syne · DM Mono · Fraunces</p>
+            <p style="color:var(--text-dim);margin-top:4px;">Python · Ollama · Figma Plugin API · HTML/CSS</p>
+        </div>
+    </footer>
+
+    <script>
+        // ── SCROLL PROGRESS BAR ──
+        const progressBar = document.getElementById('g-progress-bar');
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+            progressBar.style.width = pct + '%';
+        });
+
+        // ── CURSOR GLOW ──
+        const cursorGlow = document.getElementById('g-cursor-glow');
+        document.addEventListener('mousemove', (e) => {
+            cursorGlow.style.left = e.clientX + 'px';
+            cursorGlow.style.top = e.clientY + 'px';
+        });
+
+        // ── INTERSECTION OBSERVER — SCALE-FADE REVEAL ──
+        const reveals = document.querySelectorAll('.g-reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.07, rootMargin: '0px 0px -40px 0px' });
+
+        reveals.forEach((el, i) => {
+            el.style.transitionDelay = (i % 5) * 0.06 + 's';
+            observer.observe(el);
+        });
+
+        // ── STAT COUNTER ANIMATION ──
+        function animateCounter(el, target, suffix = '', duration = 1200) {
+            let start = null;
+            const step = (ts) => {
+                if (!start) start = ts;
+                const progress = Math.min((ts - start) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = Math.floor(eased * target);
+                el.textContent = (current === 0 && target === 0 ? '0' : current) + suffix;
+                if (progress < 1) requestAnimationFrame(step);
+                else el.textContent = target + suffix;
+            };
+            requestAnimationFrame(step);
+        }
+
+        const statNums = document.querySelectorAll('.g-stat-num');
+        const statData = [
+            { val: 2, suffix: '' },
+            { val: 2, suffix: '' },
+            { val: 100, suffix: '%' },
+            { val: 1, suffix: '' },
+        ];
+
+        const statObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const idx = [...statNums].indexOf(entry.target);
+                    if (idx !== -1) animateCounter(entry.target, statData[idx].val, statData[idx].suffix);
+                    statObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        statNums.forEach(el => statObserver.observe(el));
+
+        // ── FLOW STEP STAGGER ──
+        document.querySelectorAll('.g-flow-step').forEach((step, i) => {
+            step.style.transitionDelay = i * 0.05 + 's';
+        });
+    </script>
+</body>
+
+</html>

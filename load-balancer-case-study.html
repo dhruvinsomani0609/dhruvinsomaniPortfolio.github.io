@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed Load Balancer — Case Study</title>
+    <meta name="description"
+        content="Case study for a full-stack Distributed Load Balancer built with Python asyncio, Redis, and Flask — featuring round-robin routing, automated health checking, and real-time monitoring.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="load-balancer-case-study.css">
+</head>
+
+<body>
+
+    <div id="lb-progress-bar"></div>
+    <div class="lb-cursor-glow" id="lb-cursor-glow"></div>
+
+    <!-- NAV -->
+    <nav>
+        <div class="lb-nav-title">Distributed Load Balancer</div>
+        <div class="lb-nav-links">
+            <a href="#overview">Overview</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#decisions">Decisions</a>
+            <a href="#code">Code</a>
+            <a href="#challenges">Challenges</a>
+            <a href="#learnings">Learnings</a>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="lb-hero">
+        <div class="lb-hero-scanline"></div>
+        <div class="lb-hero-grid"></div>
+
+        <!-- animated node network decoration -->
+        <div class="lb-hero-nodes" aria-hidden="true">
+            <div class="lb-node"></div>
+            <div class="lb-node"></div>
+            <div class="lb-node"></div>
+            <div class="lb-node"></div>
+            <div class="lb-node"></div>
+        </div>
+
+        <div class="lb-hero-eyebrow"><span>Personal Project · Distributed Systems</span></div>
+        <h1 class="lb-hero-title">
+            <span class="line1">Distributed</span>
+            <span class="line2">Load Balancer</span>
+        </h1>
+        <p class="lb-hero-sub">A full-stack distributed systems implementation featuring async round-robin routing,
+            automated PING/PONG health checking, and a real-time Redis-backed web dashboard.</p>
+        <div class="lb-hero-meta">
+            <div class="lb-hero-meta-item">
+                <div class="lb-hero-meta-label">Role</div>
+                <div class="lb-hero-meta-value">Systems Developer</div>
+            </div>
+            <div class="lb-hero-meta-item">
+                <div class="lb-hero-meta-label">Type</div>
+                <div class="lb-hero-meta-value">Personal Project</div>
+            </div>
+            <div class="lb-hero-meta-item">
+                <div class="lb-hero-meta-label">Concurrency</div>
+                <div class="lb-hero-meta-value">Python asyncio</div>
+            </div>
+            <div class="lb-hero-meta-item">
+                <div class="lb-hero-meta-label">Repo</div>
+                <div class="lb-hero-meta-value">GitHub · Open Source</div>
+            </div>
+        </div>
+        <div class="lb-hero-tags">
+            <span class="lb-htag">Python</span>
+            <span class="lb-htag">asyncio</span>
+            <span class="lb-htag">Flask</span>
+            <span class="lb-htag">Redis</span>
+            <span class="lb-htag">Docker</span>
+            <span class="lb-htag">TCP Sockets</span>
+            <span class="lb-htag">psutil</span>
+            <span class="lb-htag">WSL2</span>
+        </div>
+    </header>
+
+    <!-- OVERVIEW -->
+    <section class="lb-section" id="overview">
+        <div class="lb-sec-label">
+            <span class="lb-sec-label-text">Overview</span>
+            <span class="lb-sec-label-num">/ 01</span>
+        </div>
+
+        <div class="lb-stats-row lb-reveal">
+            <div class="lb-stat-cell">
+                <div class="lb-stat-num">3</div>
+                <div class="lb-stat-label">Backend servers routed with round-robin</div>
+            </div>
+            <div class="lb-stat-cell">
+                <div class="lb-stat-num">5s</div>
+                <div class="lb-stat-label">PING/PONG health check interval per server</div>
+            </div>
+            <div class="lb-stat-cell">
+                <div class="lb-stat-num">100</div>
+                <div class="lb-stat-label">Log entries retained in Redis with LTRIM</div>
+            </div>
+            <div class="lb-stat-cell">
+                <div class="lb-stat-num">2</div>
+                <div class="lb-stat-label">Concurrency models — async &amp; sync for comparison</div>
+            </div>
+        </div>
+
+        <h2 class="lb-sec-title lb-reveal">The Problem Space</h2>
+        <p class="lb-sec-desc lb-reveal">Managing multiple backend services manually and distributing workloads evenly
+            is
+            complex in distributed systems. This project tackles three core challenges: fairly distributing client
+            requests
+            across servers without a single bottleneck, automatically detecting and failing over around unhealthy
+            servers with
+            zero downtime, and providing real-time visibility into live system state — all using Python's native
+            <code
+                style="color:var(--blue-bright);background:var(--bg3);padding:1px 5px;border-radius:2px;">asyncio</code>
+            rather than heavyweight frameworks.
+        </p>
+
+        <div class="lb-divider-line"></div>
+
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:24px;" class="lb-reveal">
+            Tech Stack</h3>
+        <div class="lb-stack-grid">
+            <div class="lb-stack-card lb-reveal">
+                <span class="lb-stack-icon">⚡</span>
+                <div class="lb-stack-name">Python asyncio</div>
+                <div class="lb-stack-role">Non-blocking I/O · Concurrent coroutines</div>
+            </div>
+            <div class="lb-stack-card lb-reveal">
+                <span class="lb-stack-icon">🔌</span>
+                <div class="lb-stack-name">TCP Sockets</div>
+                <div class="lb-stack-role">Raw socket communication · Custom protocol</div>
+            </div>
+            <div class="lb-stack-card lb-reveal">
+                <span class="lb-stack-icon">🗃️</span>
+                <div class="lb-stack-name">Redis</div>
+                <div class="lb-stack-role">Centralized logging · Health state · Metrics</div>
+            </div>
+            <div class="lb-stack-card lb-reveal">
+                <span class="lb-stack-icon">🐳</span>
+                <div class="lb-stack-name">Docker</div>
+                <div class="lb-stack-role">Redis containment · Isolation</div>
+            </div>
+            <div class="lb-stack-card lb-reveal">
+                <span class="lb-stack-icon">🌐</span>
+                <div class="lb-stack-name">Flask</div>
+                <div class="lb-stack-role">Web dashboard · Server control API</div>
+            </div>
+            <div class="lb-stack-card lb-reveal">
+                <span class="lb-stack-icon">🧵</span>
+                <div class="lb-stack-name">Threading (alt)</div>
+                <div class="lb-stack-role">Sync LB implementation · Comparison model</div>
+            </div>
+            <div class="lb-stack-card lb-reveal">
+                <span class="lb-stack-icon">📊</span>
+                <div class="lb-stack-name">psutil</div>
+                <div class="lb-stack-role">Process monitoring · Server status</div>
+            </div>
+            <div class="lb-stack-card lb-reveal">
+                <span class="lb-stack-icon">📡</span>
+                <div class="lb-stack-name">JSON over TCP</div>
+                <div class="lb-stack-role">Newline-delimited · Human-readable protocol</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ARCHITECTURE -->
+    <section class="lb-section" id="architecture">
+        <div class="lb-sec-label">
+            <span class="lb-sec-label-text">Architecture</span>
+            <span class="lb-sec-label-num">/ 02</span>
+        </div>
+        <h2 class="lb-sec-title lb-reveal">Request Flow — Start to Finish</h2>
+        <p class="lb-sec-desc lb-reveal">A three-tier architecture where the load balancer acts as the sole entry
+            point, routing traffic intelligently across a pool of independent backend servers while a parallel
+            health-check loop continuously monitors their availability.</p>
+
+        <div class="lb-flow-grid lb-reveal">
+            <div class="lb-flow-step">
+                <div class="lb-flow-step-num">01</div>
+                <span class="lb-flow-step-icon">📨</span>
+                <div class="lb-flow-step-title">Client Request</div>
+                <div class="lb-flow-step-desc">Client sends a JSON operation to the load balancer on port 12000.
+                    Example: <code style="color:var(--blue-bright);">{"operation":"prime","value":"17"}</code>.</div>
+                <div class="lb-flow-connector"></div>
+            </div>
+            <div class="lb-flow-step">
+                <div class="lb-flow-step-num">02</div>
+                <span class="lb-flow-step-icon">⚙️</span>
+                <div class="lb-flow-step-title">Round-Robin Selection</div>
+                <div class="lb-flow-step-desc">The load balancer picks the next healthy backend via
+                    <code style="color:var(--blue-bright);">choose_backend_server()</code> — cycling through A, B, C,
+                    skipping any marked down by the health checker.
+                </div>
+                <div class="lb-flow-connector"></div>
+            </div>
+            <div class="lb-flow-step">
+                <div class="lb-flow-step-num">03</div>
+                <span class="lb-flow-step-icon">📤</span>
+                <div class="lb-flow-step-title">Forward &amp; Execute</div>
+                <div class="lb-flow-step-desc">The request is forwarded to the selected backend (port 13001–13003).
+                    The backend runs the operation — Fibonacci, prime checking, string reversal, etc.</div>
+            </div>
+            <div class="lb-flow-step">
+                <div class="lb-flow-step-num">04</div>
+                <span class="lb-flow-step-icon">📥</span>
+                <div class="lb-flow-step-title">Log &amp; Respond</div>
+                <div class="lb-flow-step-desc">The response is logged to Redis (LPUSH → LTRIM to 100 entries),
+                    then returned to the client with a
+                    <code style="color:var(--blue-bright);">server_id</code> field for traceability.
+                </div>
+                <div class="lb-flow-connector"></div>
+            </div>
+            <div class="lb-flow-step">
+                <div class="lb-flow-step-num">05</div>
+                <span class="lb-flow-step-icon">❤️</span>
+                <div class="lb-flow-step-title">Parallel Health Checks</div>
+                <div class="lb-flow-step-desc">Three concurrent async coroutines run continuously — one per server.
+                    Every 5 seconds each sends a PING, awaits a PONG, and updates the server's status in-memory
+                    and in Redis hash <code style="color:var(--blue-bright);">backend_health</code>.</div>
+            </div>
+            <div class="lb-flow-step">
+                <div class="lb-flow-step-num">06</div>
+                <span class="lb-flow-step-icon">📊</span>
+                <div class="lb-flow-step-title">Dashboard Monitoring</div>
+                <div class="lb-flow-step-desc">The Flask dashboard reads Redis in real-time — displaying per-server
+                    health status, the request count from
+                    <code style="color:var(--blue-bright);">requests_processed</code> counter, and the live log feed.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- KEY DECISIONS -->
+    <section class="lb-section" id="decisions">
+        <div class="lb-sec-label">
+            <span class="lb-sec-label-text">Key Decisions</span>
+            <span class="lb-sec-label-num">/ 03</span>
+        </div>
+        <h2 class="lb-sec-title lb-reveal">4 Pivotal Engineering Choices</h2>
+        <p class="lb-sec-desc lb-reveal">Each architectural decision balanced educational clarity with demonstrating
+            production-grade patterns — making the internals visible without oversimplifying them.</p>
+
+        <div class="lb-decisions-grid">
+            <div class="lb-decision-card lb-reveal">
+                <div class="lb-decision-card-header">
+                    <div class="lb-decision-card-num">01</div>
+                    <div class="lb-decision-card-title">asyncio Over Threading</div>
+                </div>
+                <div class="lb-decision-card-body">
+                    <div class="lb-decision-problem">⚠ Problem
+                        <span>Thread-per-client concurrency is easy to reason about but expensive — each thread consumes
+                            ~8MB of stack memory, and context switching becomes a bottleneck at any meaningful
+                            concurrency
+                            level.</span>
+                    </div>
+                    <div class="lb-decision-solution">✓ Solution
+                        <span>Built the primary load balancer on Python
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">asyncio</code>:
+                            a single-threaded event loop that handles thousands of concurrent connections by suspending
+                            at I/O waits and resuming coroutines as data arrives — no thread overhead.</span>
+                    </div>
+                    <div class="lb-decision-impact">A threading-based version was kept for educational comparison.
+                        The async version is demonstrably lighter and serves as a model for modern Python concurrency.
+                    </div>
+                </div>
+            </div>
+
+            <div class="lb-decision-card lb-reveal">
+                <div class="lb-decision-card-header">
+                    <div class="lb-decision-card-num">02</div>
+                    <div class="lb-decision-card-title">Round-Robin with Health Awareness</div>
+                </div>
+                <div class="lb-decision-card-body">
+                    <div class="lb-decision-problem">⚠ Problem
+                        <span>A naive round-robin without health awareness routes requests to crashed servers — the
+                            client
+                            hangs, the load balancer blocks, and the next server in rotation still gets skipped even
+                            though it's healthy.</span>
+                    </div>
+                    <div class="lb-decision-solution">✓ Solution
+                        <span>The
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">choose_backend_server()</code>
+                            function checks
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">server_status</code>
+                            for every candidate during iteration. Failed servers are silently skipped in O(n) time,
+                            protected by an
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">asyncio.Lock</code>
+                            to prevent pointer race conditions.</span>
+                    </div>
+                    <div class="lb-decision-impact">The load balancer automatically routes around failures without any
+                        configuration change — demonstrating fault tolerance through algorithmic awareness, not
+                        infrastructure.</div>
+                </div>
+            </div>
+
+            <div class="lb-decision-card lb-reveal">
+                <div class="lb-decision-card-header">
+                    <div class="lb-decision-card-num">03</div>
+                    <div class="lb-decision-card-title">PING/PONG Health Check Protocol</div>
+                </div>
+                <div class="lb-decision-card-body">
+                    <div class="lb-decision-problem">⚠ Problem
+                        <span>Sending real computational requests as health probes would skew metrics, consume
+                            backend resources unnecessarily, and give false positives — a server could handle PING
+                            but fail on actual workloads.</span>
+                    </div>
+                    <div class="lb-decision-solution">✓ Solution
+                        <span>Each backend server handles a special
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">{"type":"PING"}</code>
+                            message type separately from computation requests, returning
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">{"type":"PONG"}</code>
+                            immediately. Three health check coroutines run in parallel, each on a 5-second loop.</span>
+                    </div>
+                    <div class="lb-decision-impact">Near-zero overhead on backends. Clear pass/fail semantics.
+                        Decouples availability detection from operation correctness.</div>
+                </div>
+            </div>
+
+            <div class="lb-decision-card lb-reveal">
+                <div class="lb-decision-card-header">
+                    <div class="lb-decision-card-num">04</div>
+                    <div class="lb-decision-card-title">Redis for Centralized Observability</div>
+                </div>
+                <div class="lb-decision-card-body">
+                    <div class="lb-decision-problem">⚠ Problem
+                        <span>Log files and print statements don't work for a distributed system — they're local to the
+                            process, require `tail -f` to observe, and aren't queryable from a web UI without a full
+                            log aggregation stack.</span>
+                    </div>
+                    <div class="lb-decision-solution">✓ Solution
+                        <span>All events are pushed to Redis via async
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">LPUSH</code>
+                            (with
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">LTRIM</code>
+                            capping at 100). Health states live in a Redis
+                            <code
+                                style="color:var(--accent-amber);background:var(--bg);padding:1px 5px;border-radius:2px;">HASH</code>.
+                            The Flask dashboard reads both with a single request — no file I/O, no polling
+                            processes.</span>
+                    </div>
+                    <div class="lb-decision-impact">Real-time, persistent, queryable observability using one dependency
+                        (Redis) already containerized. Demonstrates centralized logging as an architectural pattern.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CODE -->
+    <section class="lb-section" id="code">
+        <div class="lb-sec-label">
+            <span class="lb-sec-label-text">Core Code</span>
+            <span class="lb-sec-label-num">/ 04</span>
+        </div>
+        <h2 class="lb-sec-title lb-reveal">The Async Round-Robin Engine</h2>
+        <p class="lb-sec-desc lb-reveal">The two functions at the heart of the system: health-aware server selection
+            and fault-tolerant request forwarding with automatic retry on failure.</p>
+
+        <div class="lb-code-block lb-reveal">
+            <div class="lb-code-header">
+                <div class="lb-code-dot red"></div>
+                <div class="lb-code-dot yellow"></div>
+                <div class="lb-code-dot green"></div>
+                <span class="lb-code-filename">load_balancer_async.py · core routing functions</span>
+            </div>
+            <div class="lb-code-body">
+                <span class="lb-kw">async</span> <span class="lb-kw">def</span> <span
+                    class="lb-fn">choose_backend_server</span>():
+                <span class="lb-kw">global</span> <span class="lb-var">next_server_index</span>
+                <span class="lb-kw2">async</span> <span class="lb-kw">with</span> <span
+                    class="lb-var">status_lock</span>: <span class="lb-cmt"># prevent race on shared pointer</span>
+                <span class="lb-kw">for</span> _ <span class="lb-kw">in</span> <span class="lb-fn">range</span>(<span
+                    class="lb-fn">len</span>(<span class="lb-var">backend_servers</span>)):
+                <span class="lb-var">server</span> = <span class="lb-var">backend_servers</span>[<span
+                    class="lb-var">next_server_index</span>]
+                <span class="lb-var">next_server_index</span> = (<span class="lb-var">next_server_index</span> + <span
+                    class="lb-num">1</span>) % <span class="lb-fn">len</span>(<span
+                    class="lb-var">backend_servers</span>)
+                <span class="lb-var">host</span>, <span class="lb-var">port</span>, _ = <span
+                    class="lb-var">server</span>
+                <span class="lb-kw">if</span> <span class="lb-var">server_status</span>.<span
+                    class="lb-fn">get</span>((<span class="lb-var">host</span>, <span class="lb-var">port</span>), <span
+                    class="lb-kw">False</span>):
+                <span class="lb-kw">return</span> <span class="lb-var">server</span> <span class="lb-cmt"># first
+                    healthy server found</span>
+                <span class="lb-kw">return</span> <span class="lb-kw">None</span> <span class="lb-cmt"># all servers are
+                    down</span>
+
+                <span class="lb-kw">async</span> <span class="lb-kw">def</span> <span
+                    class="lb-fn">forward_request</span>(<span class="lb-var">request</span>: <span
+                    class="lb-cls">dict</span>):
+                <span class="lb-var">attempts</span> = <span class="lb-num">0</span>
+                <span class="lb-kw">while</span> <span class="lb-var">attempts</span> &lt; <span
+                    class="lb-fn">len</span>(<span class="lb-var">backend_servers</span>):
+                <span class="lb-var">server</span> = <span class="lb-kw2">await</span> <span
+                    class="lb-fn">choose_backend_server</span>()
+                <span class="lb-kw">if</span> <span class="lb-kw">not</span> <span class="lb-var">server</span>: <span
+                    class="lb-kw">break</span>
+                <span class="lb-var">host</span>, <span class="lb-var">port</span>, <span
+                    class="lb-var">identifier</span> = <span class="lb-var">server</span>
+                <span class="lb-kw">try</span>:
+                <span class="lb-var">reader</span>, <span class="lb-var">writer</span> = <span
+                    class="lb-kw2">await</span> <span class="lb-fn">asyncio.open_connection</span>(<span
+                    class="lb-var">host</span>, <span class="lb-var">port</span>)
+                <span class="lb-kw2">await</span> <span class="lb-fn">send_json</span>(<span
+                    class="lb-var">writer</span>, <span class="lb-var">request</span>)
+                <span class="lb-var">response</span> = <span class="lb-kw2">await</span> <span
+                    class="lb-fn">recv_json</span>(<span class="lb-var">reader</span>)
+                <span class="lb-var">writer</span>.<span class="lb-fn">close</span>(); <span class="lb-kw2">await</span>
+                <span class="lb-var">writer</span>.<span class="lb-fn">wait_closed</span>()
+                <span class="lb-kw">if</span> <span class="lb-var">response</span>:
+                <span class="lb-var">response</span>[<span class="lb-str">'server_id'</span>] = <span
+                    class="lb-var">identifier</span> <span class="lb-cmt"># tag source for traceability</span>
+                <span class="lb-kw2">await</span> <span class="lb-fn">log_to_redis</span>(<span
+                    class="lb-fn">f</span><span class="lb-str">"Forwarded to server {identifier}: {response}"</span>)
+                <span class="lb-kw">return</span> <span class="lb-var">response</span>
+                <span class="lb-kw">except</span> <span class="lb-cls">Exception</span> <span class="lb-kw">as</span>
+                <span class="lb-var">e</span>:
+                <span class="lb-kw2">async</span> <span class="lb-kw">with</span> <span
+                    class="lb-var">status_lock</span>:
+                <span class="lb-var">server_status</span>[(<span class="lb-var">host</span>, <span
+                    class="lb-var">port</span>)] = <span class="lb-kw">False</span> <span class="lb-cmt"># mark down,
+                    retry next</span>
+                <span class="lb-kw2">await</span> <span class="lb-fn">log_to_redis</span>(<span
+                    class="lb-fn">f</span><span class="lb-str">"Server {identifier} failed: {e}"</span>)
+                <span class="lb-var">attempts</span> += <span class="lb-num">1</span>
+                <span class="lb-kw">return</span> {<span class="lb-str">"error"</span>: <span class="lb-str">"All
+                    backend servers are down or unresponsive."</span>}
+            </div>
+        </div>
+
+        <div class="lb-divider-line"></div>
+
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:8px;" class="lb-reveal">
+            Why the Lock Matters</h3>
+        <p style="color:var(--text-muted);font-size:13px;max-width:640px;line-height:1.8;" class="lb-reveal">
+            The
+            <code
+                style="color:var(--blue-bright);background:var(--bg3);padding:2px 6px;border-radius:2px;">asyncio.Lock</code>
+            around
+            <code
+                style="color:var(--blue-bright);background:var(--bg3);padding:2px 6px;border-radius:2px;">next_server_index</code>
+            is the critical detail. Without it, two concurrent coroutines could both read the same pointer value,
+            both increment it, and both route to the same backend — violating the round-robin guarantee. The lock
+            ensures pointer advancement is atomic: only one coroutine can select and advance the index at a time,
+            while all others suspend and wait. This is asyncio's equivalent of a mutex without the thread overhead.
+        </p>
+    </section>
+
+    <!-- CHALLENGES -->
+    <section class="lb-section" id="challenges">
+        <div class="lb-sec-label">
+            <span class="lb-sec-label-text">Challenges</span>
+            <span class="lb-sec-label-num">/ 05</span>
+        </div>
+        <h2 class="lb-sec-title lb-reveal">Problems &amp; How They Were Solved</h2>
+        <p class="lb-sec-desc lb-reveal">Building a distributed system on a single machine surfaces real distributed
+            systems problems — just at a smaller scale. Each challenge taught a pattern applicable at any scale.</p>
+
+        <div class="lb-challenges-grid">
+            <div class="lb-challenge-card lb-reveal">
+                <span class="lb-challenge-icon">🔄</span>
+                <div class="lb-challenge-title">Race Conditions on Shared State</div>
+                <div class="lb-challenge-desc">Two async coroutines handling simultaneous client connections both called
+                    <code style="color:var(--accent-amber);">choose_backend_server()</code> at the same instant —
+                    reading
+                    and then both incrementing
+                    <code style="color:var(--accent-amber);">next_server_index</code>, causing the same server to be
+                    selected twice in a row and breaking round-robin fairness.
+                </div>
+                <div class="lb-challenge-fix">✓ Wrapped the pointer read-increment-return sequence in an
+                    <code style="color:var(--accent-green);">asyncio.Lock</code>. Only one coroutine advances the index
+                    at
+                    a time; others suspend at the lock boundary and resume with the updated value.
+                </div>
+            </div>
+
+            <div class="lb-challenge-card lb-reveal">
+                <span class="lb-challenge-icon">🔌</span>
+                <div class="lb-challenge-title">Silent Connection Failures</div>
+                <div class="lb-challenge-desc">When a backend server was stopped mid-session, the next request to that
+                    server would hang indefinitely — the OS kept the TCP socket open briefly, so connection succeeded
+                    but no response arrived. The client waited forever.</div>
+                <div class="lb-challenge-fix">✓ Added a
+                    <code style="color:var(--accent-green);">try/except</code> in
+                    <code style="color:var(--accent-green);">forward_request()</code> that catches any connection or I/O
+                    exception, immediately marks the server as
+                    <code style="color:var(--accent-green);">False</code> in
+                    <code style="color:var(--accent-green);">server_status</code>, and retries with the next server in
+                    the rotation — returning an error only if all are down.
+                </div>
+            </div>
+
+            <div class="lb-challenge-card lb-reveal">
+                <span class="lb-challenge-icon">📋</span>
+                <div class="lb-challenge-title">Log State Lost on Restart</div>
+                <div class="lb-challenge-desc">When the load balancer process was restarted, the in-memory
+                    <code style="color:var(--accent-amber);">server_status</code> dict reset to all-healthy. The system
+                    needed 5+ seconds to re-discover crashed servers via health checks — during which it happily
+                    routed requests to downed backends.
+                </div>
+                <div class="lb-challenge-fix">✓ Health status is now written to Redis hash
+                    <code style="color:var(--accent-green);">backend_health</code> on every check cycle — providing an
+                    external source of truth. On restart, the system could seed its in-memory state from Redis before
+                    accepting connections, minimizing the blind window.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LEARNINGS -->
+    <section class="lb-section" id="learnings">
+        <div class="lb-sec-label">
+            <span class="lb-sec-label-text">Learnings</span>
+            <span class="lb-sec-label-num">/ 06</span>
+        </div>
+        <h2 class="lb-sec-title lb-reveal">Three Principles Internalized</h2>
+        <p class="lb-sec-desc lb-reveal">The lessons from building production-grade distributed patterns at small
+            scale. Each one transfers directly to real-world distributed systems work.</p>
+
+        <div class="lb-learnings-grid">
+            <div class="lb-learning-card lb-reveal">
+                <div class="lb-learning-num">01</div>
+                <div class="lb-learning-title">Concurrency Is Not Parallelism</div>
+                <div class="lb-learning-desc">Python's asyncio runs on a single thread — there is no literal
+                    parallelism.
+                    Yet it handles thousands of concurrent connections by exploiting I/O wait time. The core insight is
+                    that most distributed system bottlenecks are I/O-bound, not CPU-bound. Coroutines that yield
+                    at every network call give the event loop space to handle other connections — achieving concurrency
+                    without the overhead of threads or processes.</div>
+            </div>
+            <div class="lb-learning-card lb-reveal">
+                <div class="lb-learning-num">02</div>
+                <div class="lb-learning-title">Design for Failure, Not for Success</div>
+                <div class="lb-learning-desc">The naive approach assumes all servers are up and routes accordingly.
+                    Production systems assume servers will fail and build routing logic around that assumption.
+                    The retry loop in
+                    <code style="color:var(--blue-bright);">forward_request()</code> — not the happy path — is where
+                    the real engineering lives. Every distributed system feature should be designed with its failure
+                    mode
+                    as the primary requirement, not an afterthought.
+                </div>
+            </div>
+            <div class="lb-learning-card lb-reveal">
+                <div class="lb-learning-num">03</div>
+                <div class="lb-learning-title">Observability Is Architecture</div>
+                <div class="lb-learning-desc">Logging to Redis wasn't a UI nicety — it was a foundational architectural
+                    decision. By treating observability as a first-class component (not print statements), the system
+                    became debuggable, monitorable, and extensible without touching core routing logic. The Flask
+                    dashboard reads from Redis independently of the load balancer. In distributed systems, if you can't
+                    observe it, you can't operate it.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="lb-footer">
+        <div>
+            <div class="lb-footer-brand">Distributed Load Balancer</div>
+            <p style="font-size:11px;color:var(--text-dim);margin-top:8px;">Personal Project · Distributed Systems ·
+                Dark Editorial Design System v1.0</p>
+        </div>
+        <div class="lb-footer-note">
+            <p style="color:var(--text-muted);">Syne · DM Mono · Fraunces</p>
+            <p style="color:var(--text-dim);margin-top:4px;">Python · asyncio · Redis · Flask · TCP Sockets</p>
+        </div>
+    </footer>
+
+    <script>
+        // ── SCROLL PROGRESS BAR ──
+        const progressBar = document.getElementById('lb-progress-bar');
+        window.addEventListener('scroll', () => {
+            const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight) * 100;
+            progressBar.style.width = (isNaN(pct) ? 0 : pct) + '%';
+        });
+
+        // ── CURSOR GLOW ──
+        const cursorGlow = document.getElementById('lb-cursor-glow');
+        document.addEventListener('mousemove', (e) => {
+            cursorGlow.style.left = e.clientX + 'px';
+            cursorGlow.style.top = e.clientY + 'px';
+        });
+
+        // ── INTERSECTION OBSERVER — SCROLL REVEAL ──
+        const reveals = document.querySelectorAll('.lb-reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.07, rootMargin: '0px 0px -40px 0px' });
+
+        reveals.forEach((el, i) => {
+            el.style.transitionDelay = (i % 4) * 0.07 + 's';
+            observer.observe(el);
+        });
+
+        // ── STAT COUNTER ANIMATION ──
+        function animateCounter(el, target, suffix = '', duration = 1200) {
+            let start = null;
+            const isText = isNaN(target);
+            if (isText) { el.textContent = target; return; }
+            const step = (ts) => {
+                if (!start) start = ts;
+                const progress = Math.min((ts - start) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.floor(eased * target) + suffix;
+                if (progress < 1) requestAnimationFrame(step);
+                else el.textContent = target + suffix;
+            };
+            requestAnimationFrame(step);
+        }
+
+        const statNums = document.querySelectorAll('.lb-stat-num');
+        const statData = [
+            { val: 3, suffix: '' },
+            { val: '5s', suffix: '' },
+            { val: 100, suffix: '' },
+            { val: 2, suffix: '' },
+        ];
+
+        const statObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const idx = [...statNums].indexOf(entry.target);
+                    if (idx !== -1) {
+                        const d = statData[idx];
+                        if (typeof d.val === 'string') { entry.target.textContent = d.val; }
+                        else animateCounter(entry.target, d.val, d.suffix);
+                    }
+                    statObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        statNums.forEach(el => statObserver.observe(el));
+
+        // ── FLOW STAGGER ──
+        document.querySelectorAll('.lb-flow-step').forEach((step, i) => {
+            step.style.transitionDelay = i * 0.05 + 's';
+        });
+    </script>
+</body>
+
+</html>

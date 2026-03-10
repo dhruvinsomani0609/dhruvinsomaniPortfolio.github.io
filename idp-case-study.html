@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDP Tool — Case Study · Zenisth AI</title>
+  <meta name="description"
+    content="A deep-dive case study on the Intelligent Document Processing (IDP) B2B SaaS platform built at Zenisth AI — covering atomic billing, schema versioning, AI extraction pipelines, and security design.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div id="progress-bar"></div>
+  <div class="cursor-glow" id="cursor-glow"></div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-title">Zenisth AI — IDP Case Study</div>
+    <div class="nav-links">
+      <a href="#overview">Overview</a>
+      <a href="#process">Architecture</a>
+      <a href="#decisions">Decisions</a>
+      <a href="#code">Code</a>
+      <a href="#bugs">Bugs</a>
+      <a href="#learnings">Learnings</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-scanline"></div>
+    <div class="hero-eyebrow"><span>AI Backend Developer · Zenisth AI</span></div>
+    <h1 class="hero-title">
+      <span class="line1">Intelligent</span>
+      <span class="line2">Document Processing</span>
+    </h1>
+    <p class="hero-sub">A serverless, event-driven B2B SaaS platform for dynamic document extraction, atomic credit
+      billing, and schema-versioned AI processing at scale.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Role</div>
+        <div class="hero-meta-value">AI Backend Developer</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Company</div>
+        <div class="hero-meta-value">Zenisth AI</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Type</div>
+        <div class="hero-meta-value">Internship</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Architecture</div>
+        <div class="hero-meta-value">Serverless / Event-Driven</div>
+      </div>
+    </div>
+    <div class="hero-tags">
+      <span class="htag">AWS Lambda</span>
+      <span class="htag">S3</span>
+      <span class="htag">SQS</span>
+      <span class="htag">API Gateway</span>
+      <span class="htag">Supabase</span>
+      <span class="htag">PostgreSQL</span>
+      <span class="htag">Python</span>
+      <span class="htag">React</span>
+      <span class="htag">RTK Query</span>
+      <span class="htag">Gemini API</span>
+      <span class="htag">OCR</span>
+    </div>
+  </header>
+
+  <!-- OVERVIEW -->
+  <section class="section" id="overview">
+    <div class="sec-label">
+      <span class="sec-label-text">Overview</span>
+      <span class="sec-label-num">/ 01</span>
+    </div>
+
+    <div class="stats-row reveal">
+      <div class="stat-cell">
+        <div class="stat-num">100</div>
+        <div class="stat-label">Concurrent Lambda uploads handled atomically</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num">0</div>
+        <div class="stat-label">Orphan credit transactions in the ledger</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Backward compatibility for historical job data</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num">5</div>
+        <div class="stat-label">Pivotal architectural decisions made</div>
+      </div>
+    </div>
+
+    <h2 class="sec-title reveal">The Problem Space</h2>
+    <p class="sec-desc reveal">Enterprise document extraction tools are rigid. When invoice formats change or new
+      schemas
+      are introduced, hardcoded systems fail silently. Organizations needed a scalable, secure platform where users
+      could dynamically define and evolve JSON/CSV/XML extraction schemas — without breaking historical job data or
+      causing billing inconsistencies under concurrent upload load.</p>
+
+    <div class="divider-line"></div>
+
+    <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:24px;" class="reveal">Tech
+      Stack</h3>
+    <div class="stack-grid">
+      <div class="stack-card reveal">
+        <span class="stack-icon">⚡</span>
+        <div class="stack-name">AWS Lambda</div>
+        <div class="stack-role">Serverless compute · S3 event triggers</div>
+      </div>
+      <div class="stack-card reveal">
+        <span class="stack-icon">🗄️</span>
+        <div class="stack-name">S3 + SQS</div>
+        <div class="stack-role">Document storage · Job dispatch queue</div>
+      </div>
+      <div class="stack-card reveal">
+        <span class="stack-icon">🐘</span>
+        <div class="stack-name">Supabase</div>
+        <div class="stack-role">PostgreSQL · Auth · Atomic RPCs</div>
+      </div>
+      <div class="stack-card reveal">
+        <span class="stack-icon">⚛️</span>
+        <div class="stack-name">React + RTK Query</div>
+        <div class="stack-role">Frontend · API caching · Mutations</div>
+      </div>
+      <div class="stack-card reveal">
+        <span class="stack-icon">🐍</span>
+        <div class="stack-name">Python</div>
+        <div class="stack-role">Lambda functions · Supabase integration</div>
+      </div>
+      <div class="stack-card reveal">
+        <span class="stack-icon">🤖</span>
+        <div class="stack-name">Gemini 2.5 flash</div>
+        <div class="stack-role">Structured JSON extraction · Schema parsing</div>
+      </div>
+      <div class="stack-card reveal">
+        <span class="stack-icon">🔍</span>
+        <div class="stack-name">Authentication</div>
+        <div class="stack-role">Supabase Auth · JWT · Row-level security</div>
+      </div>
+      <div class="stack-card reveal">
+        <span class="stack-icon">🎨</span>
+        <div class="stack-name">Monaco Editor</div>
+        <div class="stack-role">Live schema editing · Real-time validation</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section class="section" id="process">
+    <div class="sec-label">
+      <span class="sec-label-text">Architecture</span>
+      <span class="sec-label-num">/ 02</span>
+    </div>
+    <h2 class="sec-title reveal">Event-Driven Process Flow</h2>
+    <p class="sec-desc reveal">A highly decoupled, serverless architecture where each component handles a single
+      responsibility — from schema definition at the client all the way to AI-powered structured extraction by worker
+      nodes.</p>
+
+    <div class="flow-grid reveal">
+      <div class="flow-step">
+        <div class="flow-step-num">01</div>
+        <span class="flow-step-icon">📋</span>
+        <div class="flow-step-title">Schema Management</div>
+        <div class="flow-step-desc">Users define JSON/CSV/XML output formats ("Tags") via React frontend with live
+          Monaco Editor for real-time try/catch syntax validation.</div>
+        <div class="flow-connector"></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">02</div>
+        <span class="flow-step-icon">📤</span>
+        <div class="flow-step-title">Document Ingestion</div>
+        <div class="flow-step-desc">PDFs and images are uploaded directly to AWS S3. High-volume concurrent batch
+          uploads are handled automatically by S3 event triggers.</div>
+        <div class="flow-connector"></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">03</div>
+        <span class="flow-step-icon">⚡</span>
+        <div class="flow-step-title">Lambda Event Trigger</div>
+        <div class="flow-step-desc">S3 triggers a serverless Lambda that calculates file size (bytes → MB), page count,
+          and determines the dynamic credit cost per document.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">04</div>
+        <span class="flow-step-icon">🔒</span>
+        <div class="flow-step-title">Atomic Billing</div>
+        <div class="flow-step-desc">A PostgreSQL RPC uses SELECT FOR UPDATE row-level locking to safely deduct credits
+          and log an immutable transaction — zero race conditions.</div>
+        <div class="flow-connector"></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">05</div>
+        <span class="flow-step-icon">📦</span>
+        <div class="flow-step-title">Job Dispatch</div>
+        <div class="flow-step-desc">Strict ordering: UUID → insert jobs row → insert credit_transactions row → insert
+          job_files rows → push jobId to SQS. FK integrity is guaranteed.</div>
+        <div class="flow-connector"></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">06</div>
+        <span class="flow-step-icon">🤖</span>
+        <div class="flow-step-title">AI Extraction</div>
+        <div class="flow-step-desc">Worker nodes consume the SQS queue, running Gemini 2.5 flash
+          to extract structured data from documents using user-defined Tags.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CORE DECISIONS -->
+  <section class="section" id="decisions">
+    <div class="sec-label">
+      <span class="sec-label-text">Core Decisions</span>
+      <span class="sec-label-num">/ 03</span>
+    </div>
+    <h2 class="sec-title reveal">6 Pivotal Engineering Choices</h2>
+    <p class="sec-desc reveal">Each decision resolved a fundamental tension between scalability, data integrity, and
+      developer experience — arrived at through shipping real production issues, not theory.</p>
+
+    <div class="decisions-grid">
+      <div class="decision-card reveal">
+        <div class="decision-card-header">
+          <div class="decision-card-num">01</div>
+          <div class="decision-card-title">Tag Versioning Engine</div>
+        </div>
+        <div class="decision-card-body">
+          <div class="decision-problem">⚠ Problem
+            <span>A simple SQL UPDATE to a Tag's schema would silently corrupt all historical jobs that relied on
+              the old format — no audit trail, no rollback path.</span>
+          </div>
+          <div class="decision-solution">✓ Solution
+            <span>Dual-path update logic: light metadata changes (name, description) update in-place; schema
+              changes archive the old tag (<code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">is_active = false</code>)
+              and create a new versioned row.</span>
+          </div>
+          <div class="decision-impact">100% backward compatibility for all historical job data. Users freely evolve
+            schemas without breaking previous extraction records.</div>
+        </div>
+      </div>
+
+      <div class="decision-card reveal">
+        <div class="decision-card-header">
+          <div class="decision-card-num">02</div>
+          <div class="decision-card-title">Atomic Credit Billing via DB RPC</div>
+        </div>
+        <div class="decision-card-body">
+          <div class="decision-problem">⚠ Problem
+            <span>100 simultaneous S3 uploads spawned 100 parallel Lambda instances. Each read the same stale
+              wallet balance — race conditions caused credit balance to be overwritten, losing revenue.</span>
+          </div>
+          <div class="decision-solution">✓ Solution
+            <span>Moved all credit deduction math from Python into a Supabase RPC using
+              <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">SELECT ... FOR UPDATE</code>
+              row-level locking, making PostgreSQL the single atomic source of truth.</span>
+          </div>
+          <div class="decision-impact">Guaranteed atomic transactions. Concurrent Lambda uploads are safely serialized
+            at the database level — zero balance discrepancies.</div>
+        </div>
+      </div>
+
+      <div class="decision-card reveal">
+        <div class="decision-card-header">
+          <div class="decision-card-num">03</div>
+          <div class="decision-card-title">Strict Job Creation Order (FK Integrity)</div>
+        </div>
+        <div class="decision-card-body">
+          <div class="decision-problem">⚠ Problem
+            <span>Logging financial transactions before the parent job row was committed caused FK constraint
+              violations — orphan ledger records with no associated job, corrupting the credit dashboard.</span>
+          </div>
+          <div class="decision-solution">✓ Solution
+            <span>Enforced strict insert ordering: Generate UUID → Insert <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">jobs</code>
+              row → Insert
+              <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">credit_transactions</code>
+              row → Insert <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">job_files</code>
+              linked rows → push to SQS.</span>
+          </div>
+          <div class="decision-impact">Zero orphan transactions. The credit dashboard reliably maps every cost entry
+            to its job, tag, and document via LEFT JOINs.</div>
+        </div>
+      </div>
+
+      <div class="decision-card reveal">
+        <div class="decision-card-header">
+          <div class="decision-card-num">04</div>
+          <div class="decision-card-title">Cross-Tenant Security (org_id Scoping)</div>
+        </div>
+        <div class="decision-card-body">
+          <div class="decision-problem">⚠ Problem
+            <span>Initial backend code lacked org_id validation on Supabase queries. User A could query
+              User B's tag_id directly, exposing a cross-tenant data leakage vulnerability.</span>
+          </div>
+          <div class="decision-solution">✓ Solution
+            <span>All Supabase queries now resolve the
+              <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">org_id</code>
+              from the verified JWT
+              <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">user_id</code>
+              and attach
+              <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">.eq('org_id', org_id)</code>
+              to every query — combined with RLS policies.</span>
+          </div>
+          <div class="decision-impact">Complete tenant data isolation. No user can access another organization's tags,
+            jobs, or billing data — even with a valid JWT.</div>
+        </div>
+      </div>
+
+      <div class="decision-card reveal">
+        <div class="decision-card-header">
+          <div class="decision-card-num">05</div>
+          <div class="decision-card-title">Live Client-Side Schema Validation</div>
+        </div>
+        <div class="decision-card-body">
+          <div class="decision-problem">⚠ Problem
+            <span>Users submitting malformed JSON through React forms reached the Python Lambda parser and caused
+              unhandled 500 Server Errors that corrupted job state.</span>
+          </div>
+          <div class="decision-solution">✓ Solution
+            <span>Integrated Monaco Editor with real-time
+              <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">try/catch</code>
+              JSON parsing on
+              <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">onChange</code>.
+              The Save button is automatically disabled until all syntax errors are resolved in the editor.</span>
+          </div>
+          <div class="decision-impact">Eliminated backend 500 errors from bad schema payloads. Frontend as the first
+            line of defense; backend SQL constraints as the last.</div>
+        </div>
+      </div>
+
+      <div class="decision-card reveal">
+        <div class="decision-card-header">
+          <div class="decision-card-num">06</div>
+          <div class="decision-card-title">document_id FK for Direct Uploads</div>
+        </div>
+        <div class="decision-card-body">
+          <div class="decision-problem">⚠ Problem
+            <span>The credit dashboard showed "System Adjustment" for direct document uploads because transactions
+              had no link to individual files — only batch job_ids were tracked.</span>
+          </div>
+          <div class="decision-solution">✓ Solution
+            <span>Altered the
+              <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">credit_transactions</code>
+              table to include a
+              <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">document_id</code>
+              FK. The RPC now uses COALESCE to look up filenames from <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">documents</code>
+              for uploads or <code
+                style="color:var(--accent-amber);background:var(--bg3);padding:1px 5px;border-radius:2px;">job_files</code>
+              for batches.</span>
+          </div>
+          <div class="decision-impact">Zero ambiguity in the ledger. Every credit entry shows the exact file or batch
+            it was charged for — direct uploads and batch jobs unified in one dashboard.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CODE -->
+  <section class="section" id="code">
+    <div class="sec-label">
+      <span class="sec-label-text">Final Code</span>
+      <span class="sec-label-num">/ 04</span>
+    </div>
+    <h2 class="sec-title reveal">The Atomic Billing RPC</h2>
+    <p class="sec-desc reveal">The critical pivot from application-layer math to data-layer integrity. This PostgreSQL
+      function replaced fragile Python race-prone calculations and became the financial backbone of the platform.</p>
+
+    <div class="code-block reveal">
+      <div class="code-header">
+        <div class="code-dot red"></div>
+        <div class="code-dot yellow"></div>
+        <div class="code-dot green"></div>
+        <span class="code-filename">deduct_document_fee.sql · Supabase RPC</span>
+      </div>
+      <div class="code-body">
+        <span class="kw">CREATE OR REPLACE FUNCTION</span> <span class="fn">deduct_document_fee</span>(
+        <span class="var">p_org_id</span> uuid,
+        <span class="var">p_amount</span> numeric,
+        <span class="var">p_document_id</span> uuid
+        )
+        <span class="kw">RETURNS</span> numeric <span class="kw">LANGUAGE</span> plpgsql <span class="kw">SECURITY
+          DEFINER</span> <span class="kw">AS</span> $$
+        <span class="kw">DECLARE</span>
+        <span class="var">v_wallet_id</span> uuid;
+        <span class="var">v_new_balance</span> numeric;
+        <span class="kw">BEGIN</span>
+        <span class="cmt">-- Step 1: Lock the wallet row — prevents concurrent reads</span>
+        <span class="kw">SELECT</span> wallet_id <span class="kw">INTO</span> <span class="var">v_wallet_id</span>
+        <span class="kw">FROM</span> public.credit_wallets
+        <span class="kw">WHERE</span> org_id = <span class="var">p_org_id</span>
+        <span class="kw">FOR UPDATE</span>; <span class="cmt">-- ← The critical row lock</span>
+
+        <span class="cmt">-- Step 2: Atomically deduct and capture new balance</span>
+        <span class="kw">UPDATE</span> public.credit_wallets
+        <span class="kw">SET</span>
+        balance = balance - <span class="var">p_amount</span>,
+        updated_at = <span class="fn">now</span>()
+        <span class="kw">WHERE</span> wallet_id = <span class="var">v_wallet_id</span>
+        <span class="kw">RETURNING</span> balance <span class="kw">INTO</span> <span class="var">v_new_balance</span>;
+
+        <span class="cmt">-- Step 3: Write immutable ledger entry linked to the specific document</span>
+        <span class="kw">INSERT INTO</span> public.credit_transactions (
+        wallet_id,
+        amount,
+        balance_after,
+        transaction_type,
+        service_type,
+        document_id
+        ) <span class="kw">VALUES</span> (
+        <span class="var">v_wallet_id</span>,
+        -<span class="var">p_amount</span>,
+        <span class="var">v_new_balance</span>,
+        <span class="str">'DEBIT'</span>,
+        <span class="str">'DOCUMENT_UPLOAD'</span>,
+        <span class="var">p_document_id</span>
+        );
+
+        <span class="kw">RETURN</span> <span class="var">v_new_balance</span>;
+        <span class="kw">END</span>;
+        $$;
+      </div>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:8px;" class="reveal">Why This
+      Matters</h3>
+    <p style="color:var(--text-muted);font-size:13px;max-width:640px;line-height:1.8;" class="reveal">Before this RPC,
+      Python code would <code
+        style="color:var(--accent-amber);background:var(--bg3);padding:2px 6px;border-radius:2px;">GET balance → subtract → UPDATE</code>
+      in three separate network round-trips. Between steps 1 and 3, another Lambda could read a stale balance. The RPC
+      collapses all three operations into a single atomic transaction with a row-level lock — making it physically
+      impossible for two Lambdas to corrupt the same wallet simultaneously. The added <code
+        style="color:var(--accent-amber);background:var(--bg3);padding:2px 6px;border-radius:2px;">document_id</code>
+      column also links every deduction to a specific file, making the credit ledger fully auditable.</p>
+  </section>
+
+  <!-- FEEDBACK & ITERATION -->
+  <section class="section" id="feedback">
+    <h2 class="sec-title reveal">Feedback & Response</h2>
+    <p class="sec-desc reveal">Feedback from the frontend, product, and QA teams drove critical architectural refactors
+      that improved system performance, ledger transparency, and transactional integrity substantially.</p>
+
+    <div class="feedback-grid reveal">
+
+      <div class="feedback-card">
+        <div class="feedback-from">Frontend Team</div>
+        <div class="feedback-quote">Sending the entire 500-line schema string on every save is heavy, especially if the
+          user only changed the Tag Name.</div>
+      </div>
+
+      <div class="feedback-card">
+        <div class="feedback-from">Product Team</div>
+        <div class="feedback-quote">The credit dashboard shows 'System Adjustment' for document uploads instead of the
+          actual file name — makes the ledger useless for auditing.</div>
+      </div>
+
+      <div class="feedback-card">
+        <div class="feedback-from">QA Engineering</div>
+        <div class="feedback-quote">During bulk S3 uploads, the wallet balance is occasionally miscalculated, causing
+          revenue leakage due to simultaneous deductions.</div>
+      </div>
+
+      <div class="feedback-card">
+        <div class="feedback-from">Data Operations</div>
+        <div class="feedback-quote">Editing an existing extraction schema inadvertently alters the structural context of
+          documents that were processed weeks ago.</div>
+      </div>
+
+    </div>
+
+    <div class="iteration-list reveal">
+
+      <div class="iteration-row">
+        <div>
+          <span class="iteration-tag">Diff Payloads</span>
+        </div>
+        <div>
+          <h3 class="iteration-title">Partial Update Refactor</h3>
+          <p class="iteration-desc">Refactored the React <code class="kw">onSubmit</code> handler to diff current state
+            against original references, sending only modified fields in the <code class="kw">PUT</code> request. The
+            Python Lambda was updated to dynamically patch missing fields from existing database records — eliminating
+            unnecessary bandwidth and preventing accidental overwrites of unchanged fields in concurrent environments.
+          </p>
+        </div>
+      </div>
+
+      <div class="iteration-row">
+        <div>
+          <span class="iteration-tag">Dynamic Ledger</span>
+        </div>
+        <div>
+          <h3 class="iteration-title">Intelligent Credit Dashboard</h3>
+          <p class="iteration-desc">Altered the <code class="var">credit_transactions</code> table to add a <code
+              class="var">document_id</code> foreign key. Rewrote the dashboard RPC with a polymorphic <code
+              class="fn">COALESCE</code> subquery: direct document uploads resolve the filename from the <code
+              class="var">documents</code> table, while batch job transactions look it up via <code
+              class="var">job_files</code>. Every credit entry now provides exact auditing clarity.</p>
+        </div>
+      </div>
+
+      <div class="iteration-row">
+        <div>
+          <span class="iteration-tag">Atomic Billing</span>
+        </div>
+        <div>
+          <h3 class="iteration-title">Database-Level Row Locking</h3>
+          <p class="iteration-desc">Stripped financial arithmetic out of the Python application layer entirely. Shifted
+            credit deductions into a PostgreSQL RPC utilizing <code class="kw">SELECT ... FOR UPDATE</code>. This
+            enforces strict row-level database locks, queuing concurrent serverless S3 transactions atomically and
+            completely eliminating financial race conditions.</p>
+        </div>
+      </div>
+
+      <div class="iteration-row">
+        <div>
+          <span class="iteration-tag">Immutable Data</span>
+        </div>
+        <div>
+          <h3 class="iteration-title">Dual-Path Versioning Engine</h3>
+          <p class="iteration-desc">Engineered a dual-path versioning system for user-defined schemas. Light metadata
+            updates execute in-place, while structural schema changes archive the original row (<code
+              class="var">is_active = false</code>) and generate a newly versioned row. This ensures absolute backward
+            compatibility for historical jobs while allowing frictionless schema evolution.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- BUGS -->
+  <section class="section" id="bugs">
+    <div class="sec-label">
+      <span class="sec-label-text">Bug Fixes</span>
+      <span class="sec-label-num">/ 06</span>
+    </div>
+    <h2 class="sec-title reveal">Notable Bugs Squashed</h2>
+    <p class="sec-desc reveal">Five production bugs that ranged from silent data corruption to security vulnerabilities
+      — each fixed with targeted, minimal code changes once the root cause was identified.</p>
+
+    <table class="bug-table reveal">
+      <thead>
+        <tr>
+          <th style="width:220px;">Bug</th>
+          <th>Root Cause</th>
+          <th>Fix</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="bug-name">The Distributed Concurrency Race Condition</div>
+          </td>
+          <td>
+            <div class="bug-cause">The serverless architecture meant 100 simultaneous S3 document uploads spawned 100
+              parallel AWS Lambdas. The application layer read the wallet balance, subtracted the cost, and wrote it
+              back. Simultaneous Lambdas read the same stale balance, silently overwriting each other and causing
+              massive revenue leakage.
+            </div>
+          </td>
+          <td>
+            <div class="bug-fix">Stripped financial math out of the Python application layer. Moved deductions into a
+              PostgreSQL RPC utilizing <code style="color:var(--accent-green);">SELECT ... FOR UPDATE</code>, enforcing
+              strict row-level database locks to queue transactions atomically.</div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="bug-name">The Orphaned Ledger Foreign Key Crash</div>
+          </td>
+          <td>
+            <div class="bug-cause">Job dispatch Lambdas failed abruptly during execution. The code attempted to log a
+              credit deduction in the <code style="color:var(--accent-amber);">credit_transactions</code> table
+              referencing a <code style="color:var(--accent-amber);">job_id</code> that had not yet been committed to
+              the <code style="color:var(--accent-amber);">jobs</code> table, triggering a hard SQL Foreign Key
+              constraint violation.</div>
+          </td>
+          <td>
+            <div class="bug-fix">Re-architected the execution sequence to satisfy relational integrity: UUID Generation
+              → <code style="color:var(--accent-green);">jobs</code> INSERT → <code
+                style="color:var(--accent-green);">credit_transactions</code> INSERT → <code
+                style="color:var(--accent-green);">job_files</code> INSERT → AWS SQS Dispatch.
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="bug-name">Cross-Tenant Data Leakage</div>
+          </td>
+          <td>
+            <div class="bug-cause">Backend Supabase queries lacked <code
+                style="color:var(--accent-amber);">org_id</code> filtering. Any authenticated user could query
+              another organization's tags by passing a known <code style="color:var(--accent-amber);">tag_id</code> — a
+              silent multi-tenant isolation
+              failure.</div>
+          </td>
+          <td>
+            <div class="bug-fix">All queries now resolve <code style="color:var(--accent-green);">org_id</code> from the
+              JWT <code style="color:var(--accent-green);">user_id</code> and chain
+              <code style="color:var(--accent-green);">.eq('org_id', org_id)</code> to every Supabase query. RLS
+              policies provide a second layer.
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="bug-name">The Ghost Document Ledger Issue</div>
+          </td>
+          <td>
+            <div class="bug-cause">The React credit dashboard displayed "System Adjustment" instead of actual filenames
+              for direct document uploads. The ledger table only tracked batch <code
+                style="color:var(--accent-amber);">job_ids</code>, meaning single-file uploads bypassed batch creation
+              and left the SQL <code style="color:var(--accent-amber);">LEFT JOIN</code> completely blind.</div>
+          </td>
+          <td>
+            <div class="bug-fix">Evolved the live database schema to include a <code
+                style="color:var(--accent-green);">document_id</code> foreign key. Engineered a polymorphic <code
+                style="color:var(--accent-green);">COALESCE</code> subquery inside the dashboard RPC to dynamically
+              route lookups to either the batch job hierarchy or the direct document table based on transaction type.
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="bug-name">The Historical Schema Corruption Anomaly</div>
+          </td>
+          <td>
+            <div class="bug-cause">When users updated an IDP extraction schema (JSON) via a standard <code
+                style="color:var(--accent-amber);">PUT</code> request, the in-place SQL <code
+                style="color:var(--accent-amber);">UPDATE</code> altered the schema globally. This silently corrupted
+              the historical context of already-processed jobs that relied on the older schema format for review.
+            </div>
+          </td>
+          <td>
+            <div class="bug-fix">Engineered a dual-path versioning engine. Heavy schema changes now archive the original
+              row (<code style="color:var(--accent-green);">is_active = false</code>) and insert a newly versioned row,
+              while light metadata updates execute in-place, ensuring absolute backward compatibility.</div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- LEARNINGS -->
+  <section class="section" id="learnings">
+    <div class="sec-label">
+      <span class="sec-label-text">Learnings</span>
+      <span class="sec-label-num">/ 07</span>
+    </div>
+    <h2 class="sec-title reveal">Four Principles Internalized</h2>
+    <p class="sec-desc reveal">Lessons that only emerged from building a production system under real constraints — not
+      from theory, but from hitting the hard edges of each architectural choice.</p>
+
+    <div class="learnings-grid" style="grid-template-columns: repeat(2, 1fr);">
+      <div class="learning-card reveal">
+        <div class="learning-num">01</div>
+        <div class="learning-title">Event-Driven, Decoupled Asynchronicity</div>
+        <div class="learning-desc">production-level document processing using heavy OCR and expensive LLMs (the IDP
+          worker nodes) cannot survive inside a synchronous web request lifecycle. Trying to process thousands of
+          documents simultaneously while keeping a frontend spinner alive is a recipe for connection exhaustion and
+          timeout failure. We refactored to a fully event-driven, serverless pipeline: S3 ingestion triggers billing
+          Lambda, which dispatches job IDs to AWS SQS. Only by strictly decoupling ingestion (sync) from intensive
+          processing (async) did we achieve linear scaling and predictable backend performance.</div>
+      </div>
+      <div class="learning-card reveal">
+        <div class="learning-num">02</div>
+        <div class="learning-title">Never Trust the Client</div>
+        <div class="learning-desc">Client-side validation exists for user experience, not security. Because any frontend
+          UI can be trivially bypassed by direct API calls, the backend must act as the ultimate gatekeeper.
+          Independently sanitizing payloads, re-validating data, and enforcing strict database constraints ensures
+          system integrity regardless of how a request originated. Defense in depth is non-negotiable.</div>
+      </div>
+      <div class="learning-card reveal">
+        <div class="learning-num">03</div>
+        <div class="learning-title">Stateless vs. Stateful at Scale</div>
+        <div class="learning-desc">AWS Lambdas scale infinitely — but relational databases do not scale infinitely with
+          them. Bridging the two requires moving critical state mutations (wallet balances) into atomic database
+          functions. Application-layer math doesn't survive concurrency; database-layer row locks do.</div>
+      </div>
+      <div class="learning-card reveal">
+        <div class="learning-num">04</div>
+        <div class="learning-title">Silent Failures Are the Worst Kind</div>
+        <div class="learning-desc">RLS blocking an UPDATE with no error is harder to debug than a thrown exception.
+          The cross-tenant bug and the RLS silent failure both taught the same lesson: always verify writes have
+          actually committed. Returning affected row counts — not just success codes — is non-negotiable.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div>
+      <div class="footer-brand">IDP Case Study · Zenisth AI</div>
+      <p style="font-size:11px;color:var(--text-dim);margin-top:8px;">AI Backend Developer · Internship · Dark Editorial
+        Design System v1.0</p>
+    </div>
+    <div class="footer-note">
+      <p style="color:var(--text-muted);">Syne · DM Mono · Fraunces</p>
+      <p style="color:var(--text-dim);margin-top:4px;">AWS · Supabase · Python · React · PostgreSQL</p>
+    </div>
+  </footer>
+
+  <script>
+    // ── SCROLL PROGRESS BAR ──
+    const progressBar = document.getElementById('progress-bar');
+    window.addEventListener('scroll', () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      progressBar.style.width = pct + '%';
+    });
+
+    // ── CURSOR GLOW ──
+    const cursorGlow = document.getElementById('cursor-glow');
+    document.addEventListener('mousemove', (e) => {
+      cursorGlow.style.left = e.clientX + 'px';
+      cursorGlow.style.top = e.clientY + 'px';
+    });
+
+    // ── INTERSECTION OBSERVER — SCROLL REVEAL ──
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+    reveals.forEach((el, i) => {
+      el.style.transitionDelay = (i % 4) * 0.07 + 's';
+      observer.observe(el);
+    });
+
+    // ── COUNTER ANIMATION ──
+    function animateCounter(el, target, suffix = '', duration = 1200) {
+      let start = null;
+      const step = (timestamp) => {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(eased * target);
+        el.textContent = (current === 0 && target === 0 ? '0' : current) + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+        else el.textContent = target + suffix;
+      };
+      requestAnimationFrame(step);
+    }
+
+    const statNums = document.querySelectorAll('.stat-num');
+    const statData = [
+      { val: 100, suffix: '' },
+      { val: 0, suffix: '' },
+      { val: 100, suffix: '%' },
+      { val: 5, suffix: '' },
+    ];
+
+    const statObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const idx = [...statNums].indexOf(entry.target);
+          if (idx !== -1) {
+            animateCounter(entry.target, statData[idx].val, statData[idx].suffix);
+          }
+          statObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    statNums.forEach(el => statObserver.observe(el));
+
+    // ── FLOW STEP STAGGER HOVER ──
+    document.querySelectorAll('.flow-step').forEach((step, i) => {
+      step.style.transitionDelay = i * 0.04 + 's';
+    });
+
+    // ── DECISION CARD MAGNETIC HOVER ──
+    document.querySelectorAll('.decision-card').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        card.style.transform = `translateY(-4px) rotateX(${-y * 3}deg) rotateY(${x * 3}deg)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+      });
+    });
+  </script>
+</body>
+
+</html>
